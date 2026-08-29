@@ -1,0 +1,10 @@
+{
+  "name": "knight-girl-scroller",
+  "version": "1.0.0",
+  "description": "8-bit anime knight girl side-scrolling action game (HTML5 Canvas, mobile-first)",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "npx http-server . -p 8080 -c-1"
+  }
+}

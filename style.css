@@ -1,0 +1,201 @@
+:root {
+  --ink: #f4f1ff;
+  --gold: #ffd45e;
+  --panel: rgba(18, 12, 38, 0.92);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0818;
+  color: var(--ink);
+  font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+#wrap {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 40%, #1d1440, #08060f 75%);
+}
+
+#game {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #7fd4ff;
+  box-shadow: 0 0 0 2px #2a1f4d, 0 10px 40px rgba(0, 0, 0, .6);
+  touch-action: none;
+}
+
+.hidden { display: none !important; }
+
+/* ------------------------- 覆蓋畫面 ------------------------- */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  background: rgba(6, 4, 16, .72);
+  backdrop-filter: blur(2px);
+  z-index: 20;
+}
+
+.panel {
+  width: min(440px, 92vw);
+  max-height: 92vh;
+  overflow: auto;
+  text-align: center;
+  padding: 18px 18px 20px;
+  border: 2px solid #4b3a86;
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, .5);
+}
+
+.panel h1 {
+  margin: 2px 0 4px;
+  font-size: clamp(28px, 8vw, 44px);
+  letter-spacing: 6px;
+  color: var(--gold);
+  text-shadow: 0 3px 0 #7a3f14, 0 0 18px rgba(255, 212, 94, .35);
+}
+
+.panel h1 span { color: #ff8fb0; }
+
+.panel h2 {
+  margin: 2px 0 10px;
+  font-size: clamp(20px, 6vw, 30px);
+  color: var(--gold);
+}
+
+.sub {
+  margin: 0 0 14px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #9f95c8;
+}
+
+.bigbtn {
+  display: block;
+  width: 100%;
+  margin: 10px 0 12px;
+  padding: 14px 10px;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #24123a;
+  background: linear-gradient(#ffe58a, #ffc23d);
+  border: none;
+  border-bottom: 4px solid #b8791b;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.bigbtn:active { transform: translateY(2px); border-bottom-width: 2px; }
+
+.help {
+  margin-top: 6px;
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: #cfc7ee;
+  text-align: left;
+}
+
+.help p { margin: 2px 0; }
+.help b { color: var(--gold); }
+
+.best, .score { margin: 10px 0 0; font-size: 13px; color: #cfc7ee; }
+.score b { color: var(--gold); font-size: 17px; }
+
+/* ------------------------- 系統鍵 ------------------------- */
+#sysbar {
+  position: absolute;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
+  display: flex;
+  gap: 8px;
+  z-index: 15;
+}
+
+.sysbtn {
+  width: 38px;
+  height: 38px;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--ink);
+  background: rgba(20, 14, 44, .6);
+  border: 1px solid #4b3a86;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+/* ------------------------- 觸控搖桿 ------------------------- */
+#pad {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.padside {
+  position: absolute;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  display: flex;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.padleft { left: max(14px, env(safe-area-inset-left)); }
+.padright { right: max(14px, env(safe-area-inset-right)); align-items: flex-end; }
+
+.btn {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-weight: 700;
+  color: #fff;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .35);
+  background: rgba(30, 20, 60, .45);
+  backdrop-filter: blur(2px);
+  touch-action: none;
+  cursor: pointer;
+}
+
+.btn.is-down { background: rgba(255, 212, 94, .55); transform: scale(.94); }
+
+.dir { width: 64px; height: 64px; font-size: 22px; }
+.act { width: 62px; height: 62px; font-size: 16px; }
+.at { width: 76px; height: 76px; font-size: 19px; background: rgba(226, 70, 92, .5); }
+.jp { background: rgba(63, 208, 224, .42); }
+.sp { width: 54px; height: 54px; font-size: 13px; background: rgba(111, 240, 200, .38); }
+
+/* 橫向、螢幕矮的時候縮小按鈕，避免擋住畫面 */
+@media (max-height: 420px) {
+  .dir { width: 56px; height: 56px; }
+  .act { width: 54px; height: 54px; font-size: 14px; }
+  .at { width: 66px; height: 66px; font-size: 17px; }
+  .sp { width: 48px; height: 48px; font-size: 12px; }
+}
+
+/* 直向手機：畫面往上擺，下方留給虛擬按鍵 */
+@media (orientation: portrait) {
+  #wrap { align-items: center; padding-bottom: 20vh; }
+}

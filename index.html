@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>劍姬騎行 Knight Girl — 8bit 橫向捲軸</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#141033">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="8-bit 風格的二次元少女女騎士橫向捲軸動作遊戲，手機瀏覽器直接玩。">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>⚔️</text></svg>">
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="480" height="270"></canvas>
+
+  <!-- 右上功能鍵 -->
+  <div id="sysbar">
+    <button id="muteBtn" class="sysbtn" aria-label="音效開關">🔊</button>
+    <button id="pauseBtn" class="sysbtn" aria-label="暫停">⏸</button>
+  </div>
+
+  <!-- 觸控搖桿 -->
+  <div id="pad" class="hidden">
+    <div class="padside padleft">
+      <button class="btn dir" data-act="left" aria-label="左">◀</button>
+      <button class="btn dir" data-act="right" aria-label="右">▶</button>
+    </div>
+    <div class="padside padright">
+      <button class="btn act sp" data-act="special" aria-label="必殺">必殺</button>
+      <button class="btn act jp" data-act="jump" aria-label="跳躍">跳</button>
+      <button class="btn act at" data-act="attack" aria-label="攻擊">斬</button>
+    </div>
+  </div>
+
+  <!-- 標題畫面 -->
+  <div id="startScreen" class="screen">
+    <div class="panel">
+      <h1>劍<span>姬</span>騎行</h1>
+      <p class="sub">KNIGHT GIRL — 8BIT SIDE SCROLLER</p>
+      <button id="startBtn" class="bigbtn">開始遊戲</button>
+      <div class="help">
+        <p><b>手機</b>：左下移動，右下 斬 / 跳 / 必殺</p>
+        <p><b>電腦</b>：←→ 或 A D 移動・空白鍵 跳・J 攻擊・K 必殺・P 暫停</p>
+        <p>連續按「斬」可打出三段連擊，氣力集滿放必殺旋風斬。</p>
+        <p>走到終點傳送門過關，每 3 關會有魔王。</p>
+      </div>
+      <p class="best">最高分：<span id="bestScore">0</span></p>
+    </div>
+  </div>
+
+  <!-- 死亡畫面 -->
+  <div id="overScreen" class="screen hidden">
+    <div class="panel">
+      <h2>騎士倒下了…</h2>
+      <p class="score">分數 <b id="finalScore">0</b>　／　抵達 STAGE <b id="finalStage">1</b></p>
+      <button id="retryBtn" class="bigbtn">再挑戰一次</button>
+    </div>
+  </div>
+
+  <!-- 暫停畫面 -->
+  <div id="pauseScreen" class="screen hidden">
+    <div class="panel">
+      <h2>暫停中</h2>
+      <button id="resumeBtn" class="bigbtn">繼續</button>
+    </div>
+  </div>
+</div>
+<script type="module" src="js/game.js"></script>
+</body>
+</html>

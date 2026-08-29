@@ -1,0 +1,76 @@
+# 劍姬騎行 Knight Girl — 8-bit 橫向捲軸動作遊戲
+
+二次元少女女騎士打怪的橫向捲軸遊戲。**純 HTML5 + Canvas，零外部素材、零建置流程**，
+推上 GitHub Pages 就能用手機瀏覽器直接玩（改完 push → 重整約 30 秒）。
+
+所有像素圖（女騎士、史萊姆、蝙蝠、哥布林、魔騎士、道具）都寫在 `js/art.js` 裡，
+是用字元陣列描的點陣圖，執行時才畫進 canvas，所以整個專案沒有任何圖檔或音檔。
+
+## 玩法
+
+- 目標：一路往右打到終點傳送門過關，關卡會愈來愈長、敵人愈來愈多。
+- **每 3 關會出現魔王「魔騎士」**，打倒後才會開傳送門。
+- 打怪、撿金幣加分；愛心回血、藥水回血並補氣力。
+- 累積氣力可放**必殺旋風斬**（無敵 + 範圍傷害）。
+
+### 操作
+
+| 動作 | 手機 | 電腦 |
+|---|---|---|
+| 移動 | 左下 ◀ ▶ | `←` `→` 或 `A` `D` |
+| 跳躍（可二段跳） | 右下「跳」 | `空白鍵` / `W` / `↑` |
+| 攻擊（三段連擊） | 右下「斬」 | `J` 或 `Z` |
+| 必殺旋風斬 | 右下「必殺」 | `K` 或 `X` |
+| 暫停 | 右上 ⏸ | `P` / `Esc` |
+
+戰鬥小技巧：連續按「斬」會接出第二、三段，第三段傷害與擊退最高；
+按住跳躍鍵越久跳越高，落地前還能再跳一次。
+
+## 部署到 GitHub Pages
+
+兩種方式擇一：
+
+1. **Actions（本專案已內建）**：Repo → Settings → Pages → Source 選 **GitHub Actions**。
+   之後每次 push 到 `main` / `master` / `claude/**` 都會自動部署。
+2. **直接發佈分支**：Settings → Pages → Source 選 **Deploy from a branch**，
+   分支選你要的、資料夾選 `/ (root)` 即可（專案根目錄已有 `.nojekyll`）。
+
+網址會是 `https://<帳號>.github.io/<repo 名稱>/`。
+
+## 本機開發
+
+因為用了 ES modules，不能直接用 `file://` 開，起一個小 server 就好：
+
+```bash
+npx http-server . -p 8080 -c-1     # 或 python3 -m http.server 8080
+```
+
+然後開 http://localhost:8080 。
+
+## 檔案結構
+
+```
+index.html      畫面、觸控按鍵、標題／死亡／暫停面板
+style.css       RWD 版面（直向、橫向都可玩，含瀏海安全區處理）
+js/art.js       所有點陣素材（字元圖 + 調色盤）
+js/pixel.js     把字元圖編譯成 canvas（翻轉、剪影）
+js/sprites.js   把部位組成女騎士的各個動作影格
+js/input.js     鍵盤 + 多點觸控輸入
+js/audio.js     WebAudio 8-bit 音效與循環配樂
+js/game.js      主程式：物理、敵人 AI、關卡生成、繪圖、HUD
+```
+
+## 想改東西的話
+
+- **難度／手感**：`js/game.js` 最上面的 `GRAV`、`updatePlayer()` 裡的速度與跳躍值、
+  `ETYPE` 敵人血量與分數、`makeStage()` 的關卡長度與敵人數量。
+- **換角色外觀**：直接改 `js/art.js` 的字元圖。每個字元對應 `PAL` 裡的一個顏色，
+  `.` 是透明。想加新顏色就往 `PAL` 加一個字元即可。
+- **加新敵人**：在 `art.js` 畫圖 → `sprites.js` 註冊 → `game.js` 的 `ETYPE` 加數值、
+  `updateEnemy()` 加一段 AI。
+- **改背景主題**：`js/game.js` 的 `THEMES`（森林白天 / 黃昏丘陵 / 魔王城夜晚，每 3 關循環）。
+
+## 之後想包成 APK？
+
+這份程式碼可以直接被 Capacitor 包起來（`npx cap add android` 後把整個資料夾當 web 資產），
+再用 GitHub Actions 出 APK，遊戲邏輯完全不用改。
