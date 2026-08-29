@@ -129,6 +129,12 @@
 **塔納托斯**（千年覺醒一次的封印邪物）。設定、招式與平衡評估見
 [`assets/story/bosses.md`](assets/story/bosses.md)。
 
+## 過場
+
+開場與結局用**全畫面 CG 靜畫**（每人約 3 張，長公主的大結局較多），
+中間劇情用**洛克人式的對話**（立繪 + 文字框），播放器三者共用。
+規格、分鏡與載入量試算見 [`assets/story/cutscenes.md`](assets/story/cutscenes.md)。
+
 ## 實作備註
 
 three 個角色共用同一組 frame key（`idle` / `walk1` / `walk2` / `jump` / `fall` /
