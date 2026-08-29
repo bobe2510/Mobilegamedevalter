@@ -76,6 +76,31 @@ function drawSprite(spr, dir, x, y) {
   ctx.drawImage(img, Math.round(x), Math.round(y));
 }
 
+// ------------------------------ 可玩角色 ------------------------------
+// 三個角色共用同一組 frame key，所以換人只要換素材路徑。
+const ROSTER = [
+  {
+    key: 'knight', name: '小公主', diff: '一般', dir: 'assets/character/knight',
+    unlockBoss: 0, maxHp: 5, atkSpeed: 1.0, tier: 1.0,
+    blurb: '近戰三段連擊，標準手感。',
+  },
+  {
+    key: 'mage', name: '魔法大臣', diff: '中等', dir: 'assets/character/mage',
+    unlockBoss: 1, maxHp: 4, atkSpeed: 1.0, tier: 1.15,
+    blurb: '小公主的閨蜜。血量較少，敵人配置更硬。',
+    todo: '魔法飛彈（遠程攻擊）尚未實作',
+  },
+  {
+    key: 'elder', name: '長公主', diff: '困難', dir: 'assets/character/elder',
+    unlockBoss: 2, maxHp: 6, atkSpeed: 1.5, tier: 1.35, noSlashFx: true,
+    blurb: '騎士團長。攻速 1.5 倍、血量最多，但關卡強度最高。',
+    todo: '分身換位大招尚未實作',
+  },
+];
+
+function charOf(key) { return ROSTER.find((c) => c.key === key) || ROSTER[0]; }
+let CHAR = charOf(localStorage.getItem('kg_char') || 'knight');
+
 // ------------------------ 高解析度角色（可選素材） ------------------------
 // assets/character/anim/ 有 sheet.png + frames.json 就自動改用插畫版角色，
 // 找不到就沿用程式繪製的點陣角色。
@@ -85,14 +110,14 @@ const HERO = {
   fw: 0, fh: 0, ax: 0, ay: 0, index: {},
 };
 
-(function loadHero() {
+function loadHero(dir) {
+  HERO.ready = false; HERO.index = {};
   const img = new Image();
   let meta = null;
   const done = () => {
     if (!meta || !img.naturalWidth) return;
-    const standH = 251;                       // 站姿在來源圖裡的身高（見 anim/README）
     HERO.img = img; HERO.meta = meta;
-    HERO.scale = HERO_H / standH;
+    HERO.scale = HERO_H / (meta.stand_h || 251);   // 各角色的站姿身高不同
     HERO.fw = meta.frame_w; HERO.fh = meta.frame_h;
     HERO.ax = meta.anchor.x; HERO.ay = meta.anchor.y;
     meta.frames.forEach((n, i) => { HERO.index[n] = i; });
@@ -100,22 +125,20 @@ const HERO = {
   };
   img.onload = done;
   img.onerror = () => { HERO.ready = false; };
-  img.src = 'assets/character/anim/sheet.png';
-  fetch('assets/character/anim/frames.json')
+  img.src = dir + '/anim/sheet.png';
+  fetch(dir + '/anim/frames.json')
     .then((r) => (r.ok ? r.json() : null))
     .then((m) => { if (m && m.frames) { meta = m; done(); } })
     .catch(() => {});
-})();
+}
+loadHero(CHAR.dir);
 
 // 依狀態挑影格
 function heroFrame() {
   if (player.dead) return 'sit_cry';
   if (G.victoryT > 0) return 'victory';
   if (player.spin > 0) return 'atk_thrust';
-  if (player.atk > 0) {
-    const total = player.combo === 2 ? 22 : 18;
-    return (total - player.atk) < 6 ? 'atk_up' : 'atk_thrust';
-  }
+  if (player.atk > 0) return (player.atkTotal - player.atk) < player.atkTotal * 0.33 ? 'atk_up' : 'atk_thrust';
   if (player.inv > 58 && player.knock > 0) return 'hurt';
   if (!player.onGround) return player.vy < 0 ? 'jump' : 'fall';
   if (Math.abs(player.vx) > 0.35) return (Math.floor(player.anim / 9) % 2) ? 'walk1' : 'walk2';
@@ -141,6 +164,7 @@ const G = {
   stage: 1,
   score: 0,
   best: +(localStorage.getItem('kg_best') || 0),
+  bosses: +(localStorage.getItem('kg_bosses') || 0),   // 累計討伐魔王數，用來解鎖角色
   // 魔法熊貓依公主的表現調整試煉強度（0.70 ~ 1.45）
   tier: clampTier(+(localStorage.getItem('kg_tier') || 1)),
   frame: 0,
@@ -159,7 +183,7 @@ const player = {
   x: 60, y: GROUND, vx: 0, vy: 0, w: 26, h: 60, dir: 1,
   onGround: false, coyote: 0, jumpBuf: 0, jumps: 0,
   hp: 5, maxHp: 5, inv: 0, rage: 0, maxRage: 100,
-  atk: 0, combo: 0, chain: 0, spin: 0, spinTick: 0,
+  atk: 0, atkTotal: 18, combo: 0, chain: 0, spin: 0, spinTick: 0,
   anim: 0, hitIds: new Set(), knock: 0, dead: false,
 };
 
@@ -215,7 +239,7 @@ function makeStage(n) {
   const pool = n < 2 ? ['slime', 'slime', 'bat']
     : n < 4 ? ['slime', 'bat', 'orc']
       : ['slime', 'bat', 'orc', 'orc'];
-  const count = Math.max(4, Math.round((7 + Math.min(14, Math.floor(n * 1.6))) * G.tier));
+  const count = Math.max(4, Math.round((7 + Math.min(14, Math.floor(n * 1.6))) * G.tier * CHAR.tier));
   for (let i = 0; i < count; i++) {
     const x = 320 + (len - 900) * (i / count) + rng() * 90;
     const t = pool[Math.floor(rng() * pool.length)];
@@ -272,7 +296,7 @@ const ETYPE = {
 function makeEnemy(type, x, y, stageN) {
   const d = ETYPE[type];
   const bonus = type === 'boss' ? Math.floor((stageN / 3 - 1) * 30) : Math.floor(stageN / 3);
-  const hp = Math.max(1, Math.round((d.hp + bonus) * (type === 'boss' ? (0.6 + G.tier * 0.4) : G.tier)));
+  const hp = Math.max(1, Math.round((d.hp + bonus) * (type === 'boss' ? (0.6 + G.tier * 0.4) : G.tier) * CHAR.tier));
   return {
     id: uid++, type, x, y, vx: 0, vy: 0, w: d.w, h: d.h,
     hp, maxHp: hp, dir: -1, onGround: false, hurt: 0, anim: rnd(0, 60),
@@ -468,6 +492,10 @@ function damageEnemy(e, dmg, fromX, knock = 3.2) {
     }
     if (e.type === 'boss') {
       stage.bossDead = true;
+      G.bosses++;
+      localStorage.setItem('kg_bosses', String(G.bosses));
+      const unlocked = ROSTER.find((c) => c.unlockBoss === G.bosses);
+      if (unlocked) setTimeout(() => banner('解鎖：' + unlocked.name + '！', 120), 1500);
       cam.lockMin = 0; cam.lockMax = Infinity;
       banner('魔王討伐成功！', 110);
       sfx.clear();
@@ -620,7 +648,8 @@ function hurtPlayer(dmg, fromX) {
 
 function startAttack() {
   player.combo = player.chain > 0 ? (player.combo + 1) % 3 : 0;
-  player.atk = player.combo === 2 ? 22 : 18;
+  player.atkTotal = Math.max(8, Math.round((player.combo === 2 ? 22 : 18) / CHAR.atkSpeed));
+  player.atk = player.atkTotal;
   player.chain = 0;
   player.hitIds.clear();
   sfx.swing();
@@ -713,7 +742,7 @@ function updatePlayer() {
   if (player.atk > 0) {
     player.atk--;
     if (player.atk === 4) player.chain = 12;  // 連段輸入視窗
-    const t = (player.combo === 2 ? 22 : 18) - player.atk;
+    const t = player.atkTotal - player.atk;
     if (t >= 5 && t <= 11) {
       const hb = attackHitbox();
       for (const e of enemies) {
@@ -1004,7 +1033,7 @@ function drawGround() {
 function playerFrame() {
   if (player.spin > 0) return 'atk2';
   if (player.atk > 0) {
-    const total = player.combo === 2 ? 22 : 18;
+    const total = player.atkTotal;
     const t = total - player.atk;
     if (t < 5) return 'atk1';
     return player.combo === 1 ? 'atk2' : 'atk3';
@@ -1050,9 +1079,8 @@ function drawPlayer() {
   drawSprite(set[key], player.dir, sx, sy);
 
   // 劍光特效
-  if (player.atk > 0) {
-    const total = player.combo === 2 ? 22 : 18;
-    const t = total - player.atk;
+  if (player.atk > 0 && !CHAR.noSlashFx) {
+    const t = player.atkTotal - player.atk;
     if (t >= 3 && t <= 12) {
       const a = clamp((12 - t) / 8, 0, 1);
       const cx = player.x - cam.x + player.dir * 10;
@@ -1109,9 +1137,8 @@ function drawPlayerHD() {
   drawHero(key, player.dir, player.x, player.y);
 
   // 劍光
-  if (player.atk > 0) {
-    const total = player.combo === 2 ? 22 : 18;
-    const t = total - player.atk;
+  if (player.atk > 0 && !CHAR.noSlashFx) {
+    const t = player.atkTotal - player.atk;
     if (t >= 3 && t <= 12) {
       const a = clamp((12 - t) / 8, 0, 1);
       const cx = player.x - cam.x + player.dir * 16;
@@ -1349,6 +1376,7 @@ function newGame() {
   G.score = 0;
   G.faint = null;
   G.victoryT = 0;
+  player.maxHp = CHAR.maxHp;
   player.hp = player.maxHp;
   player.rage = 0;
   G.mode = 'play';
@@ -1374,6 +1402,7 @@ function gameOver() {
 
   ui.over.classList.remove('hidden');
   ui.pad.classList.add('hidden');
+  buildCharSelect();          // 可能剛解鎖新角色
   sfx.stopMusic();
 }
 
@@ -1394,6 +1423,13 @@ stage = makeStage(1);
 
 document.getElementById('startBtn').addEventListener('click', newGame);
 document.getElementById('retryBtn').addEventListener('click', newGame);
+document.getElementById('titleBtn').addEventListener('click', () => {
+  G.mode = 'title';
+  ui.over.classList.add('hidden');
+  ui.start.classList.remove('hidden');
+  ui.pad.classList.add('hidden');
+  buildCharSelect();
+});
 document.getElementById('resumeBtn').addEventListener('click', togglePause);
 ui.pauseBtn.addEventListener('click', togglePause);
 ui.muteBtn.addEventListener('click', () => {
@@ -1412,6 +1448,52 @@ function pickDefeatArt() {
   if (!el) return;
   el.src = DEFEAT_ART[Math.floor(Math.random() * DEFEAT_ART.length)];
 }
+
+// ------------------------------ 選角 ------------------------------
+function isUnlocked(c) { return G.bosses >= c.unlockBoss; }
+
+function buildCharSelect() {
+  const box = document.getElementById('charSelect');
+  const blurb = document.getElementById('charBlurb');
+  if (!box) return;
+  box.innerHTML = '';
+  for (const c of ROSTER) {
+    const b = document.createElement('button');
+    b.className = 'charcard';
+    b.dataset.key = c.key;
+    b.innerHTML =
+      '<img class="cface" src="' + c.dir + '/face.png" alt="">' +
+      '<span class="cname">' + c.name + '</span>' +
+      '<span class="cdiff">' + c.diff + '</span>';
+    if (!isUnlocked(c)) {
+      b.classList.add('is-locked');
+      const lk = document.createElement('span');
+      lk.className = 'clock';
+      lk.innerHTML = '<b>🔒</b>討伐 ' + c.unlockBoss + ' 隻<br>魔王後解鎖';
+      b.appendChild(lk);
+    }
+    b.addEventListener('click', () => {
+      if (!isUnlocked(c)) return;
+      CHAR = c;
+      localStorage.setItem('kg_char', c.key);
+      loadHero(c.dir);
+      refreshCharSelect();
+    });
+    box.appendChild(b);
+  }
+  refreshCharSelect();
+
+  function refreshCharSelect() {
+    if (!isUnlocked(CHAR)) { CHAR = ROSTER[0]; localStorage.setItem('kg_char', CHAR.key); loadHero(CHAR.dir); }
+    for (const el of box.children) el.classList.toggle('is-on', el.dataset.key === CHAR.key);
+    if (blurb) {
+      blurb.innerHTML = CHAR.blurb +
+        (CHAR.todo ? '<br><span class="todo">※ ' + CHAR.todo + '</span>' : '');
+    }
+  }
+  buildCharSelect.refresh = refreshCharSelect;
+}
+buildCharSelect();
 
 // ------------------------ 封面插畫（可選素材） ------------------------
 // assets/ 底下放了圖就自動套用，沒有的話畫面維持純程式繪製的樣子。

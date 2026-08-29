@@ -299,3 +299,96 @@ details.help[open] > summary::after { content: ' ▴'; }
       rgba(6, 4, 16, .05) 100%);
   }
 }
+
+/* ------------------------- 選角 ------------------------- */
+.chars {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 12px 0 6px;
+}
+
+.charcard {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 8px 4px 6px;
+  font: inherit;
+  color: var(--ink);
+  background: rgba(30, 22, 58, .6);
+  border: 2px solid #4b3a86;
+  border-radius: 12px;
+  cursor: pointer;
+  position: relative;
+  transition: transform .12s, border-color .12s, background .12s;
+}
+
+.charcard:active { transform: scale(.97); }
+
+.charcard.is-on {
+  border-color: var(--gold);
+  background: rgba(255, 212, 94, .16);
+  box-shadow: 0 0 14px rgba(255, 212, 94, .25);
+}
+
+.charcard.is-locked { cursor: not-allowed; opacity: .55; }
+.charcard.is-locked .cface { filter: grayscale(1) brightness(.6); }
+
+.charcard .cface {
+  display: block;
+  width: 100%;
+  max-width: 74px;
+  aspect-ratio: 1;
+  margin: 0 auto 4px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .25);
+  object-fit: cover;
+}
+
+.charcard .cname { display: block; font-size: 13px; font-weight: 700; }
+.charcard .cdiff { display: block; font-size: 11px; color: #a99fd0; }
+.charcard.is-on .cdiff { color: var(--gold); }
+
+.charcard .clock {
+  position: absolute;
+  inset: 6px 4px 38px;   /* 只蓋住頭像，讓名字與難度露出來 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: #ffe4a8;
+  text-align: center;
+  padding: 4px;
+  background: rgba(10, 6, 24, .68);
+  border-radius: 10px;
+}
+
+.clock b { font-size: 17px; }
+
+.blurb {
+  margin: 2px 0 4px;
+  min-height: 34px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #cfc7ee;
+}
+
+.blurb .todo { color: #a99fd0; }
+
+.smallbtn {
+  display: block;
+  width: 100%;
+  margin: -4px 0 2px;
+  padding: 9px 10px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  background: rgba(30, 22, 58, .6);
+  border: 1px solid #4b3a86;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.smallbtn:active { transform: translateY(1px); }

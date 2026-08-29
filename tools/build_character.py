@@ -103,7 +103,7 @@ def build(sources, dst, ref_frame, target_h=None):
 CHARACTERS = {
     # 小公主：白金鎧的劍士
     "knight": dict(
-        dst="assets/character/anim",
+        dst="assets/character/knight/anim",
         ref="idle",
         sources=[
             ("914c3a25-image.jpg",
