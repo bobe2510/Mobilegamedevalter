@@ -92,7 +92,7 @@ def build(sources, dst, ref_frame, target_h=None):
         sheet.paste(p["img"], (i * FW + int(PADX - p["ax"]), int(UP - p["ay"])), p["img"])
     sheet.save(os.path.join(dst, "sheet.png"), optimize=True)
     json.dump({"frames": [p["name"] for p in prepared], "frame_w": FW, "frame_h": FH,
-               "anchor": {"x": PADX, "y": UP},
+               "anchor": {"x": PADX, "y": UP}, "stand_h": target,
                "note": "anchor 是角色的頭部中心 x 與地平線 y；空中姿勢以頭頂對齊，其餘以地平線對齊"},
               open(os.path.join(dst, "frames.json"), "w"), ensure_ascii=False, indent=2)
     print("\n畫格 %dx%d x %d 格，sheet.png %.0f KB"
@@ -100,15 +100,39 @@ def build(sources, dst, ref_frame, target_h=None):
     return prepared
 
 
-if __name__ == "__main__":
-    U = "/root/.claude/uploads/a00c3426-eadb-56be-b7d5-c44c6a7b378f/"
-    build(
+CHARACTERS = {
+    # 小公主：白金鎧的劍士
+    "knight": dict(
+        dst="assets/character/anim",
+        ref="idle",
         sources=[
-            (U + "914c3a25-image.jpg",
+            ("914c3a25-image.jpg",
              ["idle", "walk1", "walk2", "jump", "atk_up", "atk_thrust"], ("jump",), "idle"),
-            (U + "1ad07008-image.jpg",
+            ("1ad07008-image.jpg",
              ["fall", "hurt", "sit_cry", "victory"], ("fall", "hurt"), "victory"),
         ],
-        dst="assets/character/anim",
-        ref_frame="idle",
+    ),
+    # 魔法大臣：藍色系的魔女，atk_thrust = 射出魔法飛彈，sit_cry = 跪地撐杖
+    "mage": dict(
+        dst="assets/character/mage/anim",
+        ref="idle",
+        sources=[
+            ("c0feed91-image.jpg",
+             ["idle", "walk1", "walk2", "jump", "atk_up", "atk_thrust"], ("jump",), "idle"),
+            ("bc36a5f7-image.jpg",
+             ["fall", "hurt", "sit_cry", "victory"], ("fall", "hurt"), "victory"),
+        ],
+    ),
+}
+
+if __name__ == "__main__":
+    U = "/root/.claude/uploads/a00c3426-eadb-56be-b7d5-c44c6a7b378f/"
+    who = sys.argv[1] if len(sys.argv) > 1 else "knight"
+    cfg = CHARACTERS[who]
+    print("=== %s ===" % who)
+    build(
+        sources=[(U + f, n, a, r) for f, n, a, r in cfg["sources"]],
+        dst=cfg["dst"],
+        ref_frame=cfg["ref"],
+        target_h=cfg.get("target_h"),
     )
