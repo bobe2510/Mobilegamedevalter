@@ -72,6 +72,7 @@ const G = {
   freeze: 0,
   banner: null,
   bannerT: 0,
+  faint: null,
 };
 
 const cam = { x: 0, lockMin: 0, lockMax: Infinity };
@@ -397,6 +398,119 @@ function damageEnemy(e, dmg, fromX, knock = 3.2) {
   }
 }
 
+
+// ------------------------ 倒地演出（哭哭 → 熊貓車） ------------------------
+// phase 0: 坐在地上哭 / 1: 熊貓車從後方開來 / 2: 抱上車 / 3: 被載走
+function startFaint() {
+  G.faint = {
+    t: 0, phase: 0, pt: 0,
+    cartX: 0, fromX: 0, fromY: 0,
+    sword: { x: player.x + 10, y: player.y - 12, vx: 2.2, vy: -3.4, rot: 0, landed: false },
+  };
+  sfx.faint();
+  sfx.stopMusic();
+}
+
+function updateFaint() {
+  const f = G.faint;
+  if (!f) return;
+  f.t++;
+
+  // 脫手飛出去的劍
+  const sw = f.sword;
+  if (!sw.landed) {
+    sw.vy = Math.min(sw.vy + GRAV * 0.9, MAXFALL);
+    sw.x += sw.vx; sw.y += sw.vy; sw.rot += 0.34;
+    if (sw.y >= GROUND) { sw.y = GROUND; sw.landed = true; sfx.tone(300, 0.12, 'square', 0.16, -160); }
+  }
+
+  // 眼淚（噴淚）
+  if (f.phase < 3 && f.t % 5 === 0) {
+    for (const side of [-1, 1]) {
+      parts.push({
+        x: player.x + side * 3, y: player.y - 17,
+        vx: side * rnd(0.9, 2.1) + (f.phase === 3 ? 1.4 : 0), vy: rnd(-2.4, -1.2),
+        life: irnd(24, 40), c: '#8fd8ff', s: 2, g: 0.16,
+      });
+    }
+    if (f.t % 30 === 0) sfx.sob();
+  }
+
+  if (f.phase === 0) {
+    if (f.t > 62) {
+      f.phase = 1;
+      f.cartX = Math.max(cam.x - 70, player.x - 230);
+      banner('熊貓車來接你了！', 90);
+      sfx.honk();
+    }
+  } else if (f.phase === 1) {
+    f.cartX += 3.4;
+    if (f.cartX >= player.x - 6) {
+      f.phase = 2; f.pt = 0;
+      f.fromX = player.x; f.fromY = player.y;
+      sfx.honk();
+    }
+  } else if (f.phase === 2) {
+    // 拋物線被抱上車斗
+    f.pt++;
+    const k = clamp(f.pt / 26, 0, 1);
+    const tx = f.cartX - 10, ty = GROUND - CART.bedH;
+    player.x = f.fromX + (tx - f.fromX) * k;
+    player.y = f.fromY + (ty - f.fromY) * k - Math.sin(k * Math.PI) * 20;
+    if (f.pt >= 26) { f.phase = 3; sfx.honk(); }
+  } else {
+    f.cartX += 4.2;
+    player.x = f.cartX - 10;
+    player.y = GROUND - CART.bedH;
+    if (f.cartX > cam.x + VW + 90) { G.faint = null; gameOver(); }
+  }
+}
+
+// 熊貓車尺寸
+const CART = { bedH: 15, bedW: 46, wheelR: 6 };
+
+function drawCart() {
+  const f = G.faint;
+  if (!f || f.phase === 0) return;
+  const x = Math.round(f.cartX - cam.x);
+  const top = GROUND - CART.bedH;
+
+  // 車輪（會轉）
+  const spin = f.cartX * 0.22;
+  for (const wx of [x - 15, x + 11]) {
+    ctx.fillStyle = '#241a33';
+    ctx.beginPath(); ctx.arc(wx, GROUND - CART.wheelR + 1, CART.wheelR, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#b57a44';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(wx, GROUND - CART.wheelR + 1, CART.wheelR - 2, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath();
+    for (let i = 0; i < 4; i++) {
+      const a = spin + i * Math.PI / 2;
+      ctx.moveTo(wx, GROUND - CART.wheelR + 1);
+      ctx.lineTo(wx + Math.cos(a) * (CART.wheelR - 2), GROUND - CART.wheelR + 1 + Math.sin(a) * (CART.wheelR - 2));
+    }
+    ctx.stroke();
+  }
+
+  // 木頭車斗
+  ctx.fillStyle = '#6b4326';
+  ctx.fillRect(x - 24, top + 4, CART.bedW, 5);
+  ctx.fillStyle = '#b57a44';
+  ctx.fillRect(x - 24, top, CART.bedW, 4);
+  for (let i = 0; i < 6; i++) ctx.fillRect(x - 22 + i * 8, top + 4, 2, 5);
+  ctx.fillStyle = '#6b4326';
+  ctx.fillRect(x - 24, top, 3, 9);
+  ctx.fillRect(x + 19, top, 3, 9);
+
+  // 玩偶熊貓司機（坐在車頭，會上下晃）
+  const bob = Math.sin(f.cartX * 0.18) * 1;
+  drawSprite(S.panda, 1, x + 4, Math.round(top - 14 + bob));
+  // 小旗子
+  ctx.fillStyle = '#e2465c';
+  ctx.fillRect(x - 22, top - 9, 1, 9);
+  ctx.fillRect(x - 21, top - 9, 6, 4);
+}
+
 // ------------------------------ 玩家 ------------------------------
 function hurtPlayer(dmg, fromX) {
   if (player.inv > 0 || player.dead) return;
@@ -410,9 +524,13 @@ function hurtPlayer(dmg, fromX) {
   sfx.hurt();
   texts.push({ x: player.x, y: player.y - 30, vy: -0.9, life: 40, text: '-' + dmg, c: '#ff8a8a' });
   if (player.hp <= 0) {
-    player.hp = 0; player.dead = true;
+    player.hp = 0;
+    player.dead = true;
+    player.dir = 1;
+    player.vx = (player.x < fromX ? -2.2 : 2.2);
+    player.vy = -4;
     sfx.die();
-    setTimeout(gameOver, 900);
+    startFaint();
   }
 }
 
@@ -438,8 +556,11 @@ function updatePlayer() {
   const pr = input.pressed;
 
   if (player.dead) {
+    if (G.faint && G.faint.phase >= 2) return;   // 上車後位置由演出控制
     player.vy = Math.min(player.vy + GRAV, MAXFALL);
     player.y += player.vy;
+    player.x += player.vx;
+    player.vx *= 0.88;
     if (player.y > GROUND) { player.y = GROUND; player.vy = 0; }
     return;
   }
@@ -601,13 +722,15 @@ function update() {
   if (G.bannerT > 0) G.bannerT--;
 
   updatePlayer();
+  if (G.faint) updateFaint();
   spawnCheck();
   for (const e of enemies) if (!e.dead) updateEnemy(e);
   enemies = enemies.filter((e) => !e.dead);
   updateItems();
   updateFx();
 
-  // 攝影機
+  // 攝影機（倒地演出時定住，讓熊貓車開出畫面）
+  if (G.faint) { if (G.shake > 0) G.shake *= 0.86; return; }
   let target = player.x - VW * 0.38;
   target = clamp(target, cam.lockMin, Math.min(cam.lockMax, stage.len - VW));
   target = clamp(target, 0, Math.max(0, stage.len - VW));
@@ -771,8 +894,13 @@ function playerFrame() {
 }
 
 function drawPlayer() {
-  if (player.dead && (G.frame % 6 < 3)) return;
-  if (player.inv > 0 && player.spin <= 0 && !player.dead && G.frame % 6 < 2) return;
+  if (player.dead) {
+    // 哭哭（坐在地上／被熊貓車載走）
+    const key = 'cry' + (Math.floor(G.frame / 14) % 2);
+    drawSprite(S.player[key], player.dir, Math.round(player.x - cam.x - 12), Math.round(player.y - PLAYER_FOOT));
+    return;
+  }
+  if (player.inv > 0 && player.spin <= 0 && G.frame % 6 < 2) return;
 
   const key = playerFrame();
   const sx = Math.round(player.x - cam.x - 12);
@@ -927,6 +1055,16 @@ function drawWorldFx() {
       ctx.textAlign = 'left';
     }
   }
+  // 倒地演出：熊貓車 + 脫手的劍
+  if (G.faint) {
+    drawCart();
+    const sw = G.faint.sword;
+    ctx.save();
+    ctx.translate(Math.round(sw.x - cam.x), Math.round(sw.y - 2));
+    ctx.rotate(sw.landed ? 0 : sw.rot);
+    ctx.drawImage(S.swordFlat[1], -6, -2);
+    ctx.restore();
+  }
   // 粒子
   for (const p of parts) {
     ctx.globalAlpha = Math.min(1, p.life / 14);
@@ -1030,6 +1168,7 @@ function render() {
 // ------------------------------ 畫面流程 ------------------------------
 function newGame() {
   G.score = 0;
+  G.faint = null;
   player.hp = player.maxHp;
   player.rage = 0;
   G.mode = 'play';

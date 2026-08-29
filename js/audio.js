@@ -70,6 +70,12 @@ export class Sfx {
   die()     { this.tone(400, 0.5, 'square', 0.35, -330); }
   clear()   { ['C5', 'E5', 'G5', 'C6'].forEach((n, i) => setTimeout(() => this.tone(freq(n), 0.20, 'square', 0.30), i * 110)); }
   boss()    { this.tone(90, 0.7, 'sawtooth', 0.40, 40); this.noise(0.5, 0.30); }
+  // 倒地：下行的可憐音階
+  faint()   { ['G4', 'F4', 'D4', 'A3'].forEach((n, i) => setTimeout(() => this.tone(freq(n), 0.26, 'triangle', 0.32), i * 150)); }
+  // 熊貓車喇叭：噗噗
+  honk()    { this.tone(392, 0.13, 'square', 0.30); setTimeout(() => this.tone(294, 0.20, 'square', 0.30), 150); }
+  // 哭哭
+  sob()     { this.tone(520 + Math.random() * 80, 0.10, 'triangle', 0.14, -120); }
 
   // 簡短的循環主旋律
   startMusic() {

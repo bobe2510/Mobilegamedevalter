@@ -1,5 +1,5 @@
 // 把 art.js 的點陣資料組裝成一張張動作影格（含左右翻轉版本）。
-import { KNIGHT, SLIME, BAT_A, BAT_B, ORC, BOSS, HEART, COIN, POTION, FIREBALL, PORTAL } from './art.js';
+import { KNIGHT, PANDA, SWORD_FLAT, SLIME, BAT_A, BAT_B, ORC, BOSS, HEART, COIN, POTION, FIREBALL, PORTAL } from './art.js';
 import { makeSprite, compose, flip, silhouette } from './pixel.js';
 
 const PW = 24, PH = 28;          // 女騎士影格尺寸
@@ -21,26 +21,24 @@ export function buildSprites() {
   const K = {};
   for (const key in KNIGHT) K[key] = makeSprite(KNIGHT[key]);
 
-  const P = (head, torso, legs, arm, tail) => compose(PW, PH, [
-    { img: K.ponytail, x: tail[0], y: tail[1] },
-    { img: K[legs.k], x: legs.x, y: legs.y },
-    { img: K.torso, x: torso.x, y: torso.y },
-    { img: K.head, x: head.x, y: head.y },
-    { img: K[arm.k], x: arm.x, y: arm.y },
-  ]);
+  // 每個影格 = [部位名稱, x, y] 的疊圖順序（後面的畫在上面）
+  const F = (parts) => compose(PW, PH, parts.map(([k, x, y]) => ({ img: K[k], x, y })));
 
   const player = {
-    idle0: P({ x: 5, y: 0 }, { x: 6, y: 10 }, { k: 'legStand', x: 7, y: 18 }, { k: 'armIdle', x: 12, y: 12 }, [1, 7]),
-    idle1: P({ x: 5, y: 1 }, { x: 6, y: 11 }, { k: 'legStand', x: 7, y: 18 }, { k: 'armIdle', x: 12, y: 13 }, [1, 8]),
-    run0:  P({ x: 5, y: 0 }, { x: 6, y: 10 }, { k: 'legRunA', x: 7, y: 18 }, { k: 'armIdle', x: 13, y: 12 }, [2, 6]),
-    run1:  P({ x: 5, y: 1 }, { x: 6, y: 11 }, { k: 'legStand', x: 7, y: 18 }, { k: 'armIdle', x: 12, y: 13 }, [1, 7]),
-    run2:  P({ x: 5, y: 0 }, { x: 6, y: 10 }, { k: 'legRunB', x: 7, y: 18 }, { k: 'armIdle', x: 11, y: 12 }, [2, 6]),
-    run3:  P({ x: 5, y: 1 }, { x: 6, y: 11 }, { k: 'legStand', x: 7, y: 18 }, { k: 'armIdle', x: 12, y: 13 }, [1, 7]),
-    jump:  P({ x: 5, y: 0 }, { x: 6, y: 10 }, { k: 'legJump', x: 7, y: 18 }, { k: 'armIdle', x: 13, y: 11 }, [2, 5]),
-    fall:  P({ x: 5, y: 1 }, { x: 6, y: 11 }, { k: 'legJump', x: 7, y: 19 }, { k: 'armIdle', x: 12, y: 13 }, [1, 8]),
-    atk1:  P({ x: 5, y: 0 }, { x: 6, y: 10 }, { k: 'legStand', x: 7, y: 18 }, { k: 'armUp', x: 13, y: 0 }, [1, 6]),
-    atk2:  P({ x: 6, y: 1 }, { x: 7, y: 11 }, { k: 'legRunA', x: 7, y: 18 }, { k: 'armSlash', x: 8, y: 14 }, [2, 8]),
-    atk3:  P({ x: 5, y: 2 }, { x: 6, y: 11 }, { k: 'legStand', x: 7, y: 18 }, { k: 'armDown', x: 12, y: 13 }, [1, 8]),
+    idle0: F([['ponytail', 1, 8], ['legStand', 7, 20], ['torso', 6, 13], ['head', 5, 0], ['tailFront', 18, 9], ['armIdle', 14, 13]]),
+    idle1: F([['ponytail', 1, 9], ['legStand', 7, 20], ['torso', 6, 14], ['head', 5, 1], ['tailFront', 18, 10], ['armIdle', 14, 14]]),
+    run0:  F([['ponytail', 2, 7], ['legRunA', 7, 20], ['torso', 6, 13], ['head', 5, 0], ['tailFront', 18, 8], ['armIdle', 14, 13]]),
+    run1:  F([['ponytail', 1, 8], ['legStand', 7, 20], ['torso', 6, 14], ['head', 5, 1], ['tailFront', 18, 9], ['armIdle', 14, 14]]),
+    run2:  F([['ponytail', 2, 7], ['legRunB', 7, 20], ['torso', 6, 13], ['head', 5, 0], ['tailFront', 18, 8], ['armIdle', 13, 13]]),
+    run3:  F([['ponytail', 1, 8], ['legStand', 7, 20], ['torso', 6, 14], ['head', 5, 1], ['tailFront', 18, 9], ['armIdle', 14, 14]]),
+    jump:  F([['ponytail', 2, 6], ['legJump', 7, 20], ['torso', 6, 13], ['head', 5, 0], ['tailFront', 18, 8], ['armIdle', 15, 12]]),
+    fall:  F([['ponytail', 1, 9], ['legJump', 7, 21], ['torso', 6, 14], ['head', 5, 1], ['tailFront', 18, 10], ['armIdle', 14, 14]]),
+    atk1:  F([['ponytail', 1, 7], ['legStand', 7, 20], ['torso', 6, 13], ['head', 5, 0], ['tailFront', 18, 8], ['armUp', 13, 4]]),
+    atk2:  F([['ponytail', 2, 9], ['legRunA', 7, 20], ['torso', 7, 14], ['head', 6, 1], ['tailFront', 19, 10], ['armSlash', 8, 16]]),
+    atk3:  F([['ponytail', 1, 9], ['legStand', 7, 20], ['torso', 6, 14], ['head', 5, 2], ['tailFront', 18, 11], ['armDown', 13, 14]]),
+    // 倒地哭哭（也用在被熊貓車載走時）
+    cry0:  F([['ponytail', 1, 11], ['legSit', 7, 23], ['torso', 6, 16], ['headCry', 5, 4], ['tailFront', 18, 13], ['armCry', 8, 13]]),
+    cry1:  F([['ponytail', 1, 12], ['legSit', 7, 23], ['torso', 6, 17], ['headCry', 5, 5], ['tailFront', 18, 14], ['armCry', 8, 14]]),
   };
 
   const S = { player: {}, playerFlash: {} };
@@ -51,8 +49,7 @@ export function buildSprites() {
 
   const mk = (rows, k = 1) => {
     const base = makeSprite(rows);
-    const cv = k === 1 ? base : scaleUp(base, k);
-    return pair(cv);
+    return pair(k === 1 ? base : scaleUp(base, k));
   };
 
   S.slime = [mk(SLIME)];
@@ -64,6 +61,8 @@ export function buildSprites() {
   S.potion = mk(POTION);
   S.fireball = mk(FIREBALL);
   S.portal = mk(PORTAL, 2.5);
+  S.panda = mk(PANDA);
+  S.swordFlat = mk(SWORD_FLAT);
 
   // 敵人受擊閃白版本
   S.flash = {};

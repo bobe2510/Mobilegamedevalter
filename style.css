@@ -119,6 +119,8 @@ html, body {
 .help p { margin: 2px 0; }
 .help b { color: var(--gold); }
 
+.carted { margin: -4px 0 8px; font-size: 13px; color: #ffd9e2; }
+
 .best, .score { margin: 10px 0 0; font-size: 13px; color: #cfc7ee; }
 .score b { color: var(--gold); font-size: 17px; }
 
