@@ -86,14 +86,13 @@ const ROSTER = [
   },
   {
     key: 'mage', name: '魔法大臣', diff: '中等', dir: 'assets/character/mage',
-    unlockBoss: 1, maxHp: 4, atkSpeed: 1.0, tier: 1.15,
-    blurb: '小公主的閨蜜。血量較少，敵人配置更硬。',
-    todo: '魔法飛彈（遠程攻擊）尚未實作',
+    unlockBoss: 1, maxHp: 5, atkSpeed: 1.0, tier: 1.25, ranged: true,
+    blurb: '小公主的閨蜜。揮杖射出魔法飛彈，能在安全距離解決敵人——代價是敵人更硬。',
   },
   {
     key: 'elder', name: '長公主', diff: '困難', dir: 'assets/character/elder',
-    unlockBoss: 2, maxHp: 6, atkSpeed: 1.5, tier: 1.35, noSlashFx: true,
-    blurb: '騎士團長。攻速 1.5 倍、血量最多，但關卡強度最高。',
+    unlockBoss: 2, maxHp: 6, atkSpeed: 1.5, tier: 1.4, noSlashFx: true,
+    blurb: '騎士團長。攻速 1.5 倍、血量最多，敵人也最硬。',
     todo: '分身換位大招尚未實作',
   },
 ];
@@ -183,7 +182,7 @@ const player = {
   x: 60, y: GROUND, vx: 0, vy: 0, w: 26, h: 60, dir: 1,
   onGround: false, coyote: 0, jumpBuf: 0, jumps: 0,
   hp: 5, maxHp: 5, inv: 0, rage: 0, maxRage: 100,
-  atk: 0, atkTotal: 18, combo: 0, chain: 0, spin: 0, spinTick: 0,
+  atk: 0, atkTotal: 18, combo: 0, chain: 0, spin: 0, spinTick: 0, shotFired: false,
   anim: 0, hitIds: new Set(), knock: 0, dead: false,
 };
 
@@ -437,7 +436,7 @@ function updateEnemy(e) {
         if (e.t-- <= 0) {
           const shots_n = e.phase === 2 ? 3 : 2;
           for (let i = 0; i < shots_n; i++) {
-            shots.push({ id: uid++, x: e.x + e.dir * 32, y: e.y - 52 - i * 17, vx: e.dir * (2.8 + i * 0.35), vy: 0, t: 200 });
+            shots.push({ id: uid++, team: 'enemy', x: e.x + e.dir * 32, y: e.y - 52 - i * 17, vx: e.dir * (2.8 + i * 0.35), vy: 0, t: 200 });
           }
           sfx.tone(180, 0.24, 'sawtooth', 0.3, -80);
           e.st = 'cool'; e.t = e.phase === 2 ? 30 : 54;
@@ -646,13 +645,28 @@ function hurtPlayer(dmg, fromX) {
   }
 }
 
+// 魔法飛彈（大臣專用）
+function fireMissile(dmg, speed, vy, big) {
+  shots.push({
+    id: uid++, team: 'player', dmg, big: !!big,
+    x: player.x + player.dir * 22, y: player.y - 30,
+    vx: player.dir * speed, vy: vy || 0, t: 140, life: 0,
+  });
+  sfx.tone(big ? 520 : 700, 0.12, 'triangle', 0.22, big ? 420 : 300);
+  for (let i = 0; i < 4; i++) {
+    parts.push({ x: player.x + player.dir * 22, y: player.y - 30, vx: rnd(-1, 1), vy: rnd(-1, 1),
+      life: 12, c: '#9fe4ff', s: 2, g: 0 });
+  }
+}
+
 function startAttack() {
   player.combo = player.chain > 0 ? (player.combo + 1) % 3 : 0;
   player.atkTotal = Math.max(8, Math.round((player.combo === 2 ? 22 : 18) / CHAR.atkSpeed));
   player.atk = player.atkTotal;
   player.chain = 0;
   player.hitIds.clear();
-  sfx.swing();
+  player.shotFired = false;
+  if (!CHAR.ranged) sfx.swing();
   if (!player.onGround) player.vy = Math.min(player.vy, 1.2);
 }
 
@@ -682,8 +696,19 @@ function updatePlayer() {
   if (player.knock > 0) player.knock--;
   if (player.chain > 0) player.chain--;
 
-  // 旋風斬
-  if (player.spin > 0) {
+  // 必殺
+  if (player.spin > 0 && CHAR.ranged) {
+    // 魔法齊射：站定連續射出扇形飛彈
+    player.spin--;
+    player.spinTick--;
+    player.vx *= 0.86;
+    if (player.spinTick <= 0) {
+      player.spinTick = 5;
+      const n = 7 - Math.ceil(player.spin / 8);
+      fireMissile(4, 5.6, (n - 3) * 0.55, false);
+      G.shake = Math.max(G.shake, 3);
+    }
+  } else if (player.spin > 0) {
     player.spin--;
     player.spinTick--;
     const move = (s.right ? 1 : 0) - (s.left ? 1 : 0);
@@ -732,8 +757,10 @@ function updatePlayer() {
     // 攻擊 / 必殺
     if (pr.attack && (player.atk <= 0 || player.chain > 0)) startAttack();
     if (pr.special && player.rage >= player.maxRage && player.spin <= 0) {
-      player.rage = 0; player.spin = 44; player.spinTick = 1;
-      player.inv = Math.max(player.inv, 48);
+      player.rage = 0;
+      player.spin = CHAR.ranged ? 36 : 44;
+      player.spinTick = 1;
+      player.inv = Math.max(player.inv, CHAR.ranged ? 42 : 48);
       sfx.special();
       G.shake = 8;
     }
@@ -743,7 +770,14 @@ function updatePlayer() {
     player.atk--;
     if (player.atk === 4) player.chain = 12;  // 連段輸入視窗
     const t = player.atkTotal - player.atk;
-    if (t >= 5 && t <= 11) {
+    if (CHAR.ranged) {
+      // 揮杖到一半才射出飛彈，對上動畫的出手時機
+      if (!player.shotFired && t >= Math.round(player.atkTotal * 0.45)) {
+        player.shotFired = true;
+        const third = player.combo === 2;
+        fireMissile(third ? 5 : 3, third ? 6.4 : 5.2, 0, third);
+      }
+    } else if (t >= 5 && t <= 11) {
       const hb = attackHitbox();
       for (const e of enemies) {
         if (e.dead || player.hitIds.has(e.id)) continue;
@@ -833,10 +867,40 @@ function updateItems() {
   items = items.filter((i) => !i.taken);
 
   for (const sh of shots) {
-    sh.t--;
+    sh.t--; sh.life++;
     sh.x += sh.vx; sh.y += sh.vy;
-    if (!player.dead && player.inv <= 0 && player.spin <= 0 &&
-      aabb({ x: sh.x - 4, y: sh.y - 4, w: 8, h: 8 }, { x: player.x - player.w / 2, y: player.y - player.h, w: player.w, h: player.h })) {
+    // 玩家飛彈的判定框加高，才打得到地面上矮矮的敵人
+    const box = sh.team === 'player'
+      ? { x: sh.x - 8, y: sh.y - 20, w: 16, h: 40 }
+      : { x: sh.x - 6, y: sh.y - 6, w: 12, h: 12 };
+    if (sh.team === 'player') {
+      // 魔法飛彈：打到第一個敵人就消失
+      for (const e of enemies) {
+        if (e.dead) continue;
+        if (aabb(box, { x: e.x - e.w / 2, y: e.y - e.h, w: e.w, h: e.h })) {
+          damageEnemy(e, sh.dmg, sh.x, sh.big ? 4.5 : 3);
+          sh.t = 0;
+          for (let i = 0; i < 8; i++) {
+            parts.push({ x: sh.x, y: sh.y, vx: rnd(-2.5, 2.5), vy: rnd(-2.5, 2.5),
+              life: irnd(10, 20), c: i % 2 ? '#9fe4ff' : '#ffffff', s: 2, g: 0.05 });
+          }
+          break;
+        }
+      }
+      // 也能把敵人的火球打掉
+      if (sh.t > 0) {
+        for (const other of shots) {
+          if (other.team === 'enemy' && other.t > 0 &&
+            aabb(box, { x: other.x - 6, y: other.y - 6, w: 12, h: 12 })) {
+            other.t = 0; sh.t = 0; sfx.hit();
+            break;
+          }
+        }
+      }
+      if (sh.x < cam.x - 40 || sh.x > cam.x + VW + 40) sh.t = 0;
+    } else if (!player.dead && player.inv <= 0 && player.spin <= 0 &&
+      aabb({ x: sh.x - 4, y: sh.y - 4, w: 8, h: 8 },
+        { x: player.x - player.w / 2, y: player.y - player.h, w: player.w, h: player.h })) {
       sh.t = 0; hurtPlayer(1, sh.x);
     }
   }
@@ -1114,6 +1178,28 @@ function drawPlayerHD() {
   const key = heroFrame();
   if (player.inv > 0 && !player.dead && player.spin <= 0 && G.frame % 6 < 2) return;
 
+  if (player.spin > 0 && CHAR.ranged) {
+    // 魔法齊射：站著詠唱 + 腳下魔法陣
+    const cx = player.x - cam.x, cy = player.y;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(120,210,255,0.9)';
+    ctx.lineWidth = 2;
+    for (const k of [1, 0.66]) {
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - 2, 46 * k, 13 * k, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.rotate(0);
+    ctx.restore();
+    for (let i = 0; i < 2; i++) {
+      const a = rnd(0, Math.PI * 2);
+      parts.push({ x: player.x + Math.cos(a) * 42, y: player.y - 4, vx: 0, vy: rnd(-2.4, -1),
+        life: 20, c: '#9fe4ff', s: 2, g: 0 });
+    }
+    drawHero('atk_thrust', player.dir, player.x, player.y);
+    return;
+  }
+
   if (player.spin > 0) {
     // 旋風斬：原地旋轉 + 劍光圈
     const cx = player.x - cam.x, cy = player.y - HERO_H * 0.5;
@@ -1137,7 +1223,7 @@ function drawPlayerHD() {
   drawHero(key, player.dir, player.x, player.y);
 
   // 劍光
-  if (player.atk > 0 && !CHAR.noSlashFx) {
+  if (player.atk > 0 && !CHAR.noSlashFx && !CHAR.ranged) {
     const t = player.atkTotal - player.atk;
     if (t >= 3 && t <= 12) {
       const a = clamp((12 - t) / 8, 0, 1);
@@ -1220,14 +1306,40 @@ function drawEnemies() {
 }
 
 function drawWorldFx() {
-  // 火球
+  // 投射物
   for (const sh of shots) {
-    const f = S.fireball;
-    ctx.save();
-    ctx.translate(sh.x - cam.x, sh.y);
-    ctx.rotate(G.frame * 0.3);
-    ctx.drawImage(f[1], -3, -3);
-    ctx.restore();
+    const x = sh.x - cam.x;
+    if (sh.team === 'player') {
+      // 魔法飛彈：藍色菱形 + 光暈 + 拖尾
+      const r = sh.big ? 9 : 6.5;
+      ctx.save();
+      ctx.translate(x, sh.y);
+      const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 2.6);
+      grd.addColorStop(0, 'rgba(159,228,255,0.55)');
+      grd.addColorStop(1, 'rgba(159,228,255,0)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(-r * 2.6, -r * 2.6, r * 5.2, r * 5.2);
+      ctx.rotate(G.frame * 0.22);
+      ctx.fillStyle = '#3fb8ff';
+      ctx.beginPath();
+      ctx.moveTo(0, -r); ctx.lineTo(r * 0.62, 0); ctx.lineTo(0, r); ctx.lineTo(-r * 0.62, 0);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#eaf9ff';
+      ctx.beginPath();
+      ctx.moveTo(0, -r * 0.5); ctx.lineTo(r * 0.3, 0); ctx.lineTo(0, r * 0.5); ctx.lineTo(-r * 0.3, 0);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+      if (sh.life % 2 === 0) {
+        parts.push({ x: sh.x - sh.vx * 0.6, y: sh.y + rnd(-2, 2), vx: -sh.vx * 0.08, vy: rnd(-0.3, 0.3),
+          life: 12, c: '#7fd8ff', s: 2, g: 0 });
+      }
+    } else {
+      ctx.save();
+      ctx.translate(x, sh.y);
+      ctx.rotate(G.frame * 0.3);
+      ctx.drawImage(S.fireball[1], -3, -3);
+      ctx.restore();
+    }
   }
   // 衝擊波
   for (const w of waves) {
@@ -1599,6 +1711,6 @@ addEventListener('orientationchange', () => setTimeout(resize, 120));
 resize();
 
 // 對外除錯用
-window.__game = { G, player, S, HERO, get enemies() { return enemies; }, get stage() { return stage; },
+window.__game = { G, player, S, HERO, get shots() { return shots; }, get enemies() { return enemies; }, get stage() { return stage; },
   get VW() { return VW; }, VH, get RES() { return RES; }, GROUND, HERO_H,
   newGame, startStage, cam };
