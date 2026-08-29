@@ -7,34 +7,56 @@
 
 | 檔名 | 用途 | 建議尺寸 | 備註 |
 |---|---|---|---|
-| `cover.png` | 標題畫面主視覺（直向手機） | 1080 × 1440（3:4） | **下方約 30% 要留白**，會被標題面板蓋住 |
-| `cover-wide.png` | 標題畫面主視覺（橫向／桌機） | 1920 × 1080（16:9） | 角色放**右半邊**，左半邊留白給標題面板 |
-| `cry.png` | 結算畫面的哭哭立繪 | 1024 × 1024（1:1） | 角色置中，背景單純即可 |
+| `cover.jpg` | 標題畫面主視覺（直向手機） | 3:4 | **下方約 30% 要留白**，會被標題面板蓋住 |
+| `cover-wide.jpg` | 標題畫面主視覺（橫向／桌機） | 16:9 或 3:2 | 角色放**右半邊**，左半邊留白給標題面板 |
+| `cart.png` | 結算畫面：熊貓車載走公主 | 3:2 左右 | 像素風，會用 `image-rendering: pixelated` 顯示 |
+| `cry.png` | 結算畫面：公主坐在地上哭 | 3:2 左右 | 同上 |
 
-- 格式 PNG（或 JPG 也行，改一下檔名即可）。單張建議壓到 1.5 MB 以內，載入比較快。
+- 插畫類（cover）用 JPG，像素風（cart / cry）用 PNG。單張建議 300 KB 以內。
 - 圖片**不要含文字**，標題是程式畫的，會疊在上面。
+
+---
+
+## 故事設定
+
+> 王宮最受寵愛的小公主，偷偷立志要成為騎士，帶著劍溜出了城堡。
+> 放心不下的王宮派出擅長操控人偶的**魔法大臣**，把一隻**魔法熊貓娃娃**交給公主——
+> 熊貓會依她當下的實力安排剛剛好的試煉；萬一撐不住，就用**熊貓車**把公主平安送回王宮。
+
+熊貓在遊戲裡有三個身分：平常跟在公主身邊的跟班、暗中調整難度的考官、以及倒下時拉車的司機。
 
 ---
 
 ## 角色設定（每張圖都貼這段，確保長相一致）
 
 ```
-A 16-year-old anime bishoujo knight girl.
-Long golden-blonde hair in a high ponytail tied with a crimson ribbon, plus two
-shoulder-length side locks framing her face. A thin gold tiara on her forehead.
-Large sapphire-blue eyes with bright highlights, long eyelashes, light blush on
-her cheeks, fair skin.
-She wears an ornate silver-white breastplate with gold trim and a blue gemstone
-at the chest, matching shoulder pauldrons, a short pink pleated skirt with a
-white underlayer, a wide gold-buckled belt, and silver thigh-high armored boots
-with gold edging. A deep crimson knight's cape flows from her shoulders.
-She carries a European longsword with a gold cross-guard and a blue jewel in the
-pommel.
+A 16-year-old anime princess-knight girl, the beloved little princess of the royal palace.
+Long golden-blonde hair tied in a high ponytail with a RED ribbon, soft bangs and
+two shoulder-length side locks framing her face. A delicate GOLD tiara with a blue
+gemstone on her forehead. Large sapphire-blue eyes with bright highlights, long
+eyelashes, light blush, fair skin, gentle dignified expression.
+
+She wears an elegant WHITE dress-armor with rich GOLD filigree trim: a white
+breastplate with a blue gem at the collar, white gloves, a gold-and-blue jeweled
+belt, a short white layered skirt with gold embroidery, white thigh-high stockings
+and white-and-gold armored boots. A flowing WHITE cape lined with gold vine
+patterns hangs from her shoulders.
+
+She carries a European longsword with a deep-blue grip, an ornate gold cross-guard
+and a blue jewel set in the guard.
+```
+
+伙伴角色（出現在結算插畫裡）：
+
+```
+A chubby cute panda plush doll, black and white, with a simple stitched smile —
+a magical puppet controlled by the royal court mage. It pulls a small wooden cart
+with iron-rimmed wheels.
 ```
 
 ---
 
-## Prompt 1 — 直式封面 `cover.png`
+## Prompt 1 — 直式封面 `cover.jpg`
 
 ```
 [貼上上面的角色設定]
@@ -56,7 +78,7 @@ empty (just grass and sky) — UI will be placed there.
 No text, no letters, no logo, no watermark, no signature, no border frame.
 ```
 
-## Prompt 2 — 橫式封面 `cover-wide.png`
+## Prompt 2 — 橫式封面 `cover-wide.jpg`
 
 ```
 [貼上上面的角色設定]
@@ -78,7 +100,7 @@ the left (that space is reserved for the title UI).
 No text, no letters, no logo, no watermark, no signature, no border frame.
 ```
 
-## Prompt 3 — 哭哭立繪 `cry.png`
+## Prompt 3 — 結算插畫 `cart.png` / `cry.png`（像素風）
 
 ```
 [貼上上面的角色設定]

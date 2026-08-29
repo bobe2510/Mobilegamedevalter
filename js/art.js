@@ -14,13 +14,14 @@ export const PAL = {
   'h': '#fff0a8', // 頭髮亮
   'H': '#f8d05f', // 頭髮
   'y': '#c99a2e', // 頭髮暗
-  'a': '#fdfdff', // 盔甲亮
-  'A': '#ccd8f0', // 盔甲
-  'B': '#7f90b8', // 盔甲暗 / 靴子
-  'c': '#ff6b86', // 粉紅裙
-  'j': '#d1364f', // 騎士披風
-  'J': '#8c1f34', // 披風陰影
-  'C': '#c23a5c', // 粉紅暗
+  'a': '#fffaf0', // 白金鎧甲（亮）
+  'A': '#ded6ea', // 白金鎧甲（陰影）
+  'B': '#c6bed8', // 鎧甲深陰影 / 白長靴
+  'c': '#e23c4e', // 紅緞帶
+  'D': '#a79dc0', // 白色物件的描邊
+  'j': '#d63a4a', // 騎士披風
+  'J': '#8f1f2c', // 披風陰影
+  'C': '#9e2131', // 紅暗 / 哭泣的嘴
   'e': '#3f63d8', // 眼睛
   'E': '#7aa8ff', // 眼睛亮部
   'l': '#ffffff', // 高光
@@ -82,53 +83,53 @@ export const KNIGHT = {
   torso: [
     '.AA.aaaa.AA.',
     'gaaaaaaaaaag',
-    '.gAAaaaaAAg.',
-    '.gAAAiiAAAg.',
-    '.AAAAliAAAA.',
-    '..AAAAAAAA..',
-    '.BBBBggBBBB.',
-    '.CccccccccC.',
-    'CCccccccccCC',
-    '.CCCaaaaCCC.',
+    '.gaaaaaaaag.',
+    '.gaaaiiaaag.',
+    '.aayaiiayaa.',
+    '..gaaaaaag..',
+    '.ggggyygggg.',
+    '.DAaaaaaaAD.',
+    'DAaaaaaaaaAD',
+    '.gAAgAAgAAg.',
   ],
   legStand: [
     '..ss..ss..',
-    '..ss..ss..',
     '..gg..gg..',
-    '..BB..BB..',
-    '..BB..BB..',
-    '.BBB..BBB.',
+    '..aa..aa..',
+    '..aA..aA..',
+    '..aA..aA..',
+    '.ggg..ggg.',
   ],
   legRunA: [
     '..ss.ss...',
-    '.ss...ss..',
     '.gg...gg..',
-    '.BB....BB.',
-    'BB.....BB.',
-    'BBB....BBB',
+    '.aa...aa..',
+    '.aA....aA.',
+    'aA.....aA.',
+    'ggg....ggg',
   ],
   legRunB: [
     '...ss.ss..',
-    '...ss..ss.',
-    '..gg...gg.',
-    '..BB...BB.',
-    '..BB....BB',
-    '.BBB...BBB',
+    '...gg..gg.',
+    '..aa...aa.',
+    '..aA...aA.',
+    '..aA....aA',
+    '.ggg...ggg',
   ],
   legJump: [
     '..ssss....',
-    '.ss..ss...',
-    '.gg...gg..',
-    'BBB...BBB.',
-    'BB.....BB.',
+    '.gg..gg...',
+    '.aa...aa..',
+    'aaA...aaA.',
+    'gg.....gg.',
     '..........',
   ],
   legSit: [
     '..ssssss..',
-    '.sssssss..',
     '.ggggggg..',
-    '.BBBBBBB..',
-    '..BBBBB...',
+    '.aaaaaaa..',
+    '.aaaaaA...',
+    '..ggggg...',
     '..........',
   ],
   cape: [
@@ -179,9 +180,9 @@ export const KNIGHT = {
     '.AA......',
     '.aa......',
     '..ss.....',
-    '...g.....',
+    '...e.....',
     '.ggggg...',
-    '...g.....',
+    '...e.....',
     '...wW....',
     '...wW....',
     '...wW....',
@@ -201,7 +202,7 @@ export const KNIGHT = {
     '...wW....',
     '...wW....',
     '.ggggg...',
-    '...g.....',
+    '...e.....',
     '...ss....',
     '..aas....',
     '.AA......',

@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="description" content="8-bit 風格的二次元少女女騎士橫向捲軸動作遊戲，手機瀏覽器直接玩。">
+<meta name="description" content="王宮小公主偷偷出門當騎士，魔法熊貓娃娃在旁守護的 8-bit 橫向捲軸動作遊戲，手機瀏覽器直接玩。">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>⚔️</text></svg>">
 </head>
@@ -37,12 +37,19 @@
 
   <!-- 標題畫面 -->
   <div id="startScreen" class="screen">
-    <img id="coverArt" class="cover" src="assets/cover.png" alt="">
-    <img id="coverArtWide" class="cover cover-wide" src="assets/cover-wide.png" alt="">
+    <img id="coverArt" class="cover" src="assets/cover.jpg" alt="">
+    <img id="coverArtWide" class="cover cover-wide" src="assets/cover-wide.jpg" alt="">
     <div class="panel">
       <h1>劍<span>姬</span>騎行</h1>
-      <p class="sub">KNIGHT GIRL — 8BIT SIDE SCROLLER</p>
-      <button id="startBtn" class="bigbtn">開始遊戲</button>
+      <p class="sub">小公主的騎士修行</p>
+      <button id="startBtn" class="bigbtn">開始修行</button>
+      <details class="help story">
+        <summary>故事</summary>
+        <p>王宮最受寵愛的小公主，偷偷立志要成為騎士，帶著劍溜出了城堡。</p>
+        <p>放心不下的王宮派出了擅長操控人偶的<b>魔法大臣</b>，把一隻<b>魔法熊貓娃娃</b>交給公主——
+           熊貓會依她當下的實力，安排剛剛好的試煉；萬一撐不住了，就用<b>熊貓車</b>把公主平安送回王宮。</p>
+        <p class="tiny">（所以你會發現：連續倒下時試煉會變溫和，一路過關則會逐漸嚴苛。那都是熊貓在調整。）</p>
+      </details>
       <details class="help">
         <summary>操作說明</summary>
         <p><b>手機</b>：左下移動，右下 斬 / 跳 / 必殺</p>
@@ -57,10 +64,11 @@
   <!-- 死亡畫面 -->
   <div id="overScreen" class="screen hidden">
     <div class="panel">
-      <img id="cryArt" class="cryart" src="assets/cry.png" alt="">
+      <img id="cryArt" class="cryart" src="assets/cart.png" alt="">
       <h2>嗚…被熊貓車送走了</h2>
-      <p class="carted">🐼🛒 熊貓司機把你載回營地了</p>
+      <p class="carted">🐼 魔法熊貓把公主平安送回王宮了</p>
       <p class="score">分數 <b id="finalScore">0</b>　／　抵達 STAGE <b id="finalStage">1</b></p>
+      <p class="verdict">熊貓評定 · 試煉強度 <b id="tierText">★★☆☆☆</b></p>
       <button id="retryBtn" class="bigbtn">再挑戰一次</button>
     </div>
   </div>

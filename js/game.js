@@ -42,6 +42,20 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const rnd = (a, b) => a + Math.random() * (b - a);
 const irnd = (a, b) => Math.floor(rnd(a, b + 1));
 
+const TIER_MIN = 0.70, TIER_MAX = 1.45;
+function clampTier(v) { return Math.min(TIER_MAX, Math.max(TIER_MIN, v || 1)); }
+
+function setTier(v) {
+  G.tier = clampTier(v);
+  localStorage.setItem('kg_tier', G.tier.toFixed(3));
+}
+
+// 把試煉強度換成 5 顆星（給結算畫面顯示）
+function tierStars() {
+  const n = Math.round((G.tier - TIER_MIN) / (TIER_MAX - TIER_MIN) * 4) + 1;
+  return '★'.repeat(n) + '☆'.repeat(5 - n);
+}
+
 function mulberry32(seed) {
   let a = seed >>> 0;
   return function () {
@@ -67,6 +81,8 @@ const G = {
   stage: 1,
   score: 0,
   best: +(localStorage.getItem('kg_best') || 0),
+  // 魔法熊貓依公主的表現調整試煉強度（0.70 ~ 1.45）
+  tier: clampTier(+(localStorage.getItem('kg_tier') || 1)),
   frame: 0,
   shake: 0,
   freeze: 0,
@@ -84,6 +100,9 @@ const player = {
   atk: 0, combo: 0, chain: 0, spin: 0, spinTick: 0,
   anim: 0, hitIds: new Set(), knock: 0, dead: false,
 };
+
+// 魔法大臣派來的熊貓娃娃，平常跟在公主身後
+const pet = { x: 0, y: GROUND, vy: 0, dir: 1, onGround: true, anim: 0, hidden: false };
 
 let stage = null;
 let enemies = [];
@@ -134,7 +153,7 @@ function makeStage(n) {
   const pool = n < 2 ? ['slime', 'slime', 'bat']
     : n < 4 ? ['slime', 'bat', 'orc']
       : ['slime', 'bat', 'orc', 'orc'];
-  const count = 7 + Math.min(14, Math.floor(n * 1.6));
+  const count = Math.max(4, Math.round((7 + Math.min(14, Math.floor(n * 1.6))) * G.tier));
   for (let i = 0; i < count; i++) {
     const x = 320 + (len - 900) * (i / count) + rng() * 90;
     const t = pool[Math.floor(rng() * pool.length)];
@@ -173,6 +192,7 @@ function startStage(n) {
   player.x = 40; player.y = GROUND; player.vx = 0; player.vy = 0;
   player.dir = 1; player.atk = 0; player.spin = 0; player.inv = 60; player.dead = false;
   cam.x = 0; cam.lockMin = 0; cam.lockMax = Infinity;
+  pet.x = player.x - 30; pet.y = GROUND; pet.vy = 0; pet.dir = 1; pet.hidden = false;
   G.stage = n;
   banner(n % 3 === 0 ? `第 ${n} 關 · 魔王關` : `第 ${n} 關`, 110);
 }
@@ -190,7 +210,7 @@ const ETYPE = {
 function makeEnemy(type, x, y, stageN) {
   const d = ETYPE[type];
   const bonus = type === 'boss' ? Math.floor((stageN / 3 - 1) * 30) : Math.floor(stageN / 3);
-  const hp = d.hp + bonus;
+  const hp = Math.max(1, Math.round((d.hp + bonus) * (type === 'boss' ? (0.6 + G.tier * 0.4) : G.tier)));
   return {
     id: uid++, type, x, y, vx: 0, vy: 0, w: d.w, h: d.h,
     hp, maxHp: hp, dir: -1, onGround: false, hurt: 0, anim: rnd(0, 60),
@@ -402,6 +422,8 @@ function damageEnemy(e, dmg, fromX, knock = 3.2) {
 // ------------------------ 倒地演出（哭哭 → 熊貓車） ------------------------
 // phase 0: 坐在地上哭 / 1: 熊貓車從後方開來 / 2: 抱上車 / 3: 被載走
 function startFaint() {
+  setTier(G.tier - 0.12);   // 熊貓：下次溫柔一點
+  pet.hidden = true;        // 跟班熊貓退場，等一下由牠拉車登場
   G.faint = {
     t: 0, phase: 0, pt: 0,
     cartX: 0, fromX: 0, fromY: 0,
@@ -440,7 +462,7 @@ function updateFaint() {
     if (f.t > 62) {
       f.phase = 1;
       f.cartX = Math.max(cam.x - 70, player.x - 230);
-      banner('熊貓車來接你了！', 90);
+      banner('熊貓車出動！', 90);
       sfx.honk();
     }
   } else if (f.phase === 1) {
@@ -662,6 +684,36 @@ function updatePlayer() {
 }
 
 // ------------------------------ 道具 / 投射物 ------------------------------
+function updatePet() {
+  if (pet.hidden) return;
+  pet.anim++;
+  const target = player.x - player.dir * 26;
+  const dx = target - pet.x;
+  if (Math.abs(dx) > 90) {           // 落後太多就直接追上來
+    pet.x = target;
+    pet.y = GROUND;
+  } else if (Math.abs(dx) > 10) {
+    pet.dir = dx > 0 ? 1 : -1;
+    pet.x += clamp(dx * 0.09, -2.6, 2.6);
+    if (pet.onGround && Math.abs(dx) > 26) pet.vy = -3.4;   // 小跳步
+  }
+  pet.vy = Math.min(pet.vy + GRAV * 0.8, MAXFALL);
+  pet.y += pet.vy;
+  pet.onGround = false;
+  if (pet.y >= GROUND) { pet.y = GROUND; pet.vy = 0; pet.onGround = true; }
+}
+
+function drawPet() {
+  if (pet.hidden) return;
+  const x = Math.round(pet.x - cam.x - 7);
+  if (x < -20 || x > VW + 20) return;
+  const bob = pet.onGround ? Math.round(Math.sin(pet.anim / 14) * 1) : 0;
+  // 影子
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  ctx.fillRect(x + 2, GROUND - 1, 10, 2);
+  drawSprite(S.panda, pet.dir, x, Math.round(pet.y - 14 + bob));
+}
+
 function updateItems() {
   for (const it of items) {
     if (it.taken) continue;
@@ -727,6 +779,7 @@ function update() {
   for (const e of enemies) if (!e.dead) updateEnemy(e);
   enemies = enemies.filter((e) => !e.dead);
   updateItems();
+  updatePet();
   updateFx();
 
   // 攝影機（倒地演出時定住，讓熊貓車開出畫面）
@@ -741,6 +794,7 @@ function update() {
   if (!stage.cleared && stage.bossDead && player.x > stage.portalX - 8 && Math.abs(player.y - GROUND) < 40) {
     stage.cleared = true;
     G.score += 500 + player.hp * 100;
+    setTier(G.tier + (stage.isBoss ? 0.10 : 0.05));   // 熊貓：撐得住，那就加點料
     sfx.clear();
     banner('過關！', 90);
     setTimeout(() => {
@@ -1160,6 +1214,7 @@ function render() {
   drawGround();
   drawWorldFx();
   drawEnemies();
+  drawPet();
   drawPlayer();
   ctx.restore();
   drawHUD();
@@ -1188,6 +1243,9 @@ function gameOver() {
   ui.finalScore.textContent = G.score;
   ui.finalStage.textContent = G.stage;
   ui.best.textContent = G.best;
+  const tierEl = document.getElementById('tierText');
+  if (tierEl) tierEl.textContent = tierStars();
+  pickDefeatArt();
 
   ui.over.classList.remove('hidden');
   ui.pad.classList.add('hidden');
@@ -1221,6 +1279,15 @@ addEventListener('visibilitychange', () => { if (document.hidden && G.mode === '
 
 ui.best.textContent = G.best;
 
+// 結算畫面會從這兩張裡隨機挑一張（缺檔就自動略過）
+const DEFEAT_ART = ['assets/cart.png', 'assets/cry.png'];
+
+function pickDefeatArt() {
+  const el = document.getElementById('cryArt');
+  if (!el) return;
+  el.src = DEFEAT_ART[Math.floor(Math.random() * DEFEAT_ART.length)];
+}
+
 // ------------------------ 封面插畫（可選素材） ------------------------
 // assets/ 底下放了圖就自動套用，沒有的話畫面維持純程式繪製的樣子。
 (function setupArtwork() {
@@ -1238,6 +1305,8 @@ ui.best.textContent = G.best;
   mark(cover, ui.start, 'has-art');
   mark(wide, ui.start, 'has-wide');
   mark(cry, ui.over, 'has-portrait');
+  // 結算插畫有兩張，先預載另一張
+  DEFEAT_ART.forEach((src) => { const i = new Image(); i.src = src; });
 })();
 
 // ------------------------------ 主迴圈 ------------------------------
