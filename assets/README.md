@@ -11,4 +11,7 @@
 
 結算畫面會從 `cart.png` / `cry.png` 隨機挑一張。
 
+`story/` 底下是**還沒接進遊戲**的劇情概念圖與腳本（開場動畫用），
+遊戲不會讀取那個資料夾，詳見 [`story/README.md`](story/README.md)。
+
 想重做或加圖的話，角色設定與生成 prompt 在 [`PROMPTS.md`](PROMPTS.md)。
