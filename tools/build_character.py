@@ -11,7 +11,7 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from greenscreen_sheet import key_out, label_blobs, merge_orphans, SOLID
+from greenscreen_sheet import key_out, label_blobs, merge_orphans, to_masks, split_to_count, SOLID
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # repo 根目錄
 
@@ -22,20 +22,20 @@ def figures(path, names, air, ref):
     mask = alpha > SOLID
     lab, blobs = label_blobs(mask)
     blobs = merge_orphans(lab, blobs)
-    if len(blobs) != len(names):
-        raise SystemExit("!! %s 偵測到 %d 個姿勢，但給了 %d 個名稱" % (path, len(blobs), len(names)))
+    masks = split_to_count(to_masks(lab, blobs), len(names))
+    if len(masks) != len(names):
+        raise SystemExit("!! %s 偵測到 %d 個姿勢，但給了 %d 個名稱" % (path, len(masks), len(names)))
     ground = int(np.where(mask.any(axis=1))[0].max())
     # 先量站姿參考幀的身高，空中姿勢要用它推算「虛擬地面」
     std_h = None
-    for blob, nm in zip(blobs, names):
+    for m0, nm in zip(masks, names):
         if nm != ref:
             continue
-        solid = (alpha > SOLID) & np.isin(lab, blob["ids"])
+        solid = (alpha > SOLID) & m0
         body = np.where(solid.sum(axis=1) > 14)[0]
         std_h = int(body.max() - body.min() + 1)
     out = []
-    for blob, nm in zip(blobs, names):
-        m = np.isin(lab, blob["ids"])
+    for m, nm in zip(masks, names):
         solid = (alpha > SOLID) & m
         rowW = solid.sum(axis=1)
         body = np.where(rowW > 14)[0]
@@ -120,6 +120,17 @@ CHARACTERS = {
             ("c0feed91-image.jpg",
              ["idle", "walk1", "walk2", "jump", "atk_up", "atk_thrust"], ("jump",), "idle"),
             ("bc36a5f7-image.jpg",
+             ["fall", "hurt", "sit_cry", "victory"], ("fall", "hurt"), "victory"),
+        ],
+    ),
+    # 長公主：白金鎧 + 紅披風的大劍騎士，攻速最快
+    "elder": dict(
+        dst="assets/character/elder/anim",
+        ref="idle",
+        sources=[
+            ("b2827476-image.jpg",
+             ["idle", "walk1", "walk2", "jump", "atk_up", "atk_thrust"], ("jump",), "idle"),
+            ("1f913f97-image.jpg",
              ["fall", "hurt", "sit_cry", "victory"], ("fall", "hurt"), "victory"),
         ],
     ),

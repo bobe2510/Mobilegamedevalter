@@ -83,24 +83,59 @@ def merge_orphans(lab, blobs):
     return mains
 
 
+def to_masks(lab, blobs):
+    """把合併後的區塊轉成遮罩清單，之後才好再切開。"""
+    return [np.isin(lab, b["ids"]) for b in blobs]
+
+
+def split_to_count(masks, n):
+    """區塊數少於預期時，把最寬的那塊從最窄的欄位切開（兩個角色的武器相連時會用到）。"""
+    masks = list(masks)
+    guard = 0
+    while len(masks) < n and guard < 8:
+        guard += 1
+        widths = []
+        for m in masks:
+            xs = np.where(m.any(axis=0))[0]
+            widths.append(xs.max() - xs.min() + 1)
+        k = int(np.argmax(widths))
+        m = masks[k]
+        xs = np.where(m.any(axis=0))[0]
+        x0, x1 = int(xs.min()), int(xs.max())
+        pad = int((x1 - x0) * 0.28)                 # 只在中段找切點，避免切到邊緣
+        col = m[:, x0 + pad:x1 - pad].sum(axis=0)
+        if col.size == 0:
+            break
+        cut = x0 + pad + int(np.argmin(col))
+        left = m.copy(); left[:, cut:] = False
+        right = m.copy(); right[:, :cut] = False
+        if left.sum() < 200 or right.sum() < 200:
+            break
+        print("  （第 %d 塊太寬，從 x=%d 切成兩個角色）" % (k + 1, cut))
+        masks[k:k + 1] = [left, right]
+        masks.sort(key=lambda mm: np.where(mm.any(axis=0))[0].min())
+    return masks
+
+
 def build(src, dst, names, air=()):
     rgb, alpha = key_out(src)
     mask = alpha > SOLID
     lab, blobs = label_blobs(mask)
     blobs = merge_orphans(lab, blobs)
-    print("偵測到 %d 個姿勢" % len(blobs))
-    if len(blobs) != len(names):
+    masks = split_to_count(to_masks(lab, blobs), len(names))
+    print("偵測到 %d 個姿勢" % len(masks))
+    if len(masks) != len(names):
         print("!! 姿勢數與名稱數不符（%d vs %d），請確認圖上的角色沒有互相碰到"
-              % (len(blobs), len(names)))
+              % (len(masks), len(names)))
 
     ground = int(np.where(mask.any(axis=1))[0].max())      # 最低的腳當地平線
 
     # 站姿身高：拿來推算空中姿勢的「虛擬地面」，讓每一格的錨點語意一致
     std_h = None
-    for blob, nm in zip(blobs, names):
+    for m0, nm in zip(masks, names):
         if nm in air:
             continue
-        solid = (alpha > SOLID) & np.isin(lab, blob["ids"])
+        solid = (alpha > SOLID) & m0
         body = np.where(solid.sum(axis=1) > 14)[0]
         h = int(body.max() - body.min() + 1)
         std_h = h if std_h is None else std_h
@@ -109,8 +144,7 @@ def build(src, dst, names, air=()):
 
     # 先量每個姿勢相對於錨點的伸展範圍，畫布才不會把披風切掉
     info = []
-    for blob, nm in zip(blobs, names):
-        m = np.isin(lab, blob["ids"])
+    for m, nm in zip(masks, names):
         solid = (alpha > SOLID) & m
         rowW = solid.sum(axis=1)
         top = int(np.where(rowW > 14)[0].min())
