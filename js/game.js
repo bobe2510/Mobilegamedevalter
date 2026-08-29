@@ -94,7 +94,7 @@ const G = {
 const cam = { x: 0, lockMin: 0, lockMax: Infinity };
 
 const player = {
-  x: 60, y: GROUND, vx: 0, vy: 0, w: 14, h: 22, dir: 1,
+  x: 60, y: GROUND, vx: 0, vy: 0, w: 20, h: 34, dir: 1,
   onGround: false, coyote: 0, jumpBuf: 0, jumps: 0,
   hp: 5, maxHp: 5, inv: 0, rage: 0, maxRage: 100,
   atk: 0, combo: 0, chain: 0, spin: 0, spinTick: 0,
@@ -144,8 +144,8 @@ function makeStage(n) {
   const plats = [];
   for (let x = 380; x < len - 620; x += 150 + rng() * 210) {
     if (rng() < 0.62) {
-      const w = 46 + rng() * 54;
-      plats.push({ x: Math.round(x), y: Math.round(GROUND - (46 + rng() * 62)), w: Math.round(w), h: 8 });
+      const w = 58 + rng() * 62;
+      plats.push({ x: Math.round(x), y: Math.round(GROUND - (58 + rng() * 66)), w: Math.round(w), h: 9 });
     }
   }
 
@@ -158,7 +158,7 @@ function makeStage(n) {
     const x = 320 + (len - 900) * (i / count) + rng() * 90;
     const t = pool[Math.floor(rng() * pool.length)];
     let y = GROUND;
-    if (t === 'bat') y = GROUND - 60 - rng() * 55;
+    if (t === 'bat') y = GROUND - 74 - rng() * 55;
     else if (rng() < 0.25) {
       const p = plats.find((pp) => Math.abs(pp.x + pp.w / 2 - x) < 70);
       if (p) y = p.y;
@@ -173,10 +173,10 @@ function makeStage(n) {
 
   // 背景層（視差用）
   const far = [], mid = [], clouds = [], tufts = [];
-  for (let x = -100; x < len + VW; x += 60 + rng() * 40) far.push({ x, w: 90 + rng() * 90, h: 46 + rng() * 74 });
-  for (let x = -100; x < len + VW; x += 46 + rng() * 46) mid.push({ x, w: 16 + rng() * 12, h: 34 + rng() * 46, kind: rng() < 0.3 ? 1 : 0 });
+  for (let x = -100; x < len + VW; x += 66 + rng() * 44) far.push({ x, w: 100 + rng() * 100, h: 62 + rng() * 82 });
+  for (let x = -100; x < len + VW; x += 52 + rng() * 50) mid.push({ x, w: 20 + rng() * 14, h: 54 + rng() * 52, kind: rng() < 0.3 ? 1 : 0 });
   for (let x = -100; x < len + VW; x += 90 + rng() * 130) clouds.push({ x, y: 18 + rng() * 78, w: 26 + rng() * 34 });
-  for (let x = 0; x < len + VW; x += 14 + rng() * 26) tufts.push({ x, h: 3 + rng() * 4, w: 2 + Math.floor(rng() * 3) });
+  for (let x = 0; x < len + VW; x += 16 + rng() * 28) tufts.push({ x, h: 4 + rng() * 6, w: 2 + Math.floor(rng() * 3) });
 
   return {
     n, len, theme, plats, spawns: list, drops, far, mid, clouds, tufts, isBoss,
@@ -201,10 +201,10 @@ function banner(text, t = 90) { G.banner = text; G.bannerT = t; }
 
 // ------------------------------ 敵人 ------------------------------
 const ETYPE = {
-  slime: { w: 12, h: 10, hp: 2, score: 60, touch: 1 },
-  bat: { w: 14, h: 8, hp: 2, score: 80, touch: 1 },
-  orc: { w: 13, h: 16, hp: 5, score: 160, touch: 0 },
-  boss: { w: 30, h: 44, hp: 55, score: 2000, touch: 1 },
+  slime: { w: 17, h: 14, hp: 2, score: 60, touch: 1 },
+  bat: { w: 20, h: 11, hp: 2, score: 80, touch: 1 },
+  orc: { w: 19, h: 23, hp: 5, score: 160, touch: 0 },
+  boss: { w: 44, h: 64, hp: 55, score: 2000, touch: 1 },
 };
 
 function makeEnemy(type, x, y, stageN) {
@@ -288,13 +288,13 @@ function updateEnemy(e) {
         if (adist < 170) { e.dir = dx > 0 ? 1 : -1; e.vx += e.dir * 0.09; }
         e.vx = clamp(e.vx * 0.97, -1.5, 1.5);
         e.x += e.vx;
-        if (e.t <= 0 && adist < 130 && player.y - e.y > 10) { e.st = 'dive'; e.t = 46; e.vy = 2.4; }
+        if (e.t <= 0 && adist < 140 && player.y - e.y > 16) { e.st = 'dive'; e.t = 46; e.vy = 2.4; }
       } else {
         e.x += e.vx * 1.2;
         e.y += e.vy;
         e.vy += 0.06;
         if (e.y > GROUND - e.h) { e.vy = -2.6; }
-        if (e.t-- <= 0) { e.st = 'idle'; e.baseY = clamp(e.y, 90, GROUND - 55); e.t = irnd(60, 140); e.vy = 0; }
+        if (e.t-- <= 0) { e.st = 'idle'; e.baseY = clamp(e.y, 86, GROUND - 66); e.t = irnd(60, 140); e.vy = 0; }
       }
       break;
     }
@@ -304,14 +304,14 @@ function updateEnemy(e) {
         if (adist < 190) {
           e.dir = dx > 0 ? 1 : -1;
           e.vx = e.dir * 0.72;
-          if (adist < 26 && Math.abs(player.y - e.y) < 24) { e.st = 'wind'; e.t = 22; e.vx = 0; }
+          if (adist < 34 && Math.abs(player.y - e.y) < 32) { e.st = 'wind'; e.t = 22; e.vx = 0; }
         } else e.vx *= 0.85;
       } else if (e.st === 'wind') {
         e.vx = 0;
         if (e.t-- <= 0) { e.st = 'swing'; e.t = 12; }
       } else if (e.st === 'swing') {
         if (e.t > 6) {
-          e.atkBox = { x: e.dir > 0 ? e.x + 4 : e.x - 26, y: e.y - 18, w: 22, h: 18 };
+          e.atkBox = { x: e.dir > 0 ? e.x + 6 : e.x - 38, y: e.y - 26, w: 32, h: 26 };
         }
         if (e.t-- <= 0) { e.st = 'cool'; e.t = 34; }
       } else if (e.st === 'cool') {
@@ -344,14 +344,14 @@ function updateEnemy(e) {
           G.shake = 12; sfx.hit();
           e.st = 'cool'; e.t = e.phase === 2 ? 26 : 48;
         }
-        if (!e.onGround) e.atkBox = { x: e.x - 22, y: e.y - 44, w: 44, h: 44 };
+        if (!e.onGround) e.atkBox = { x: e.x - 32, y: e.y - 64, w: 64, h: 64 };
       } else if (e.st === 'cast') {
         e.vx = 0;
         e.dir = dx > 0 ? 1 : -1;
         if (e.t-- <= 0) {
           const shots_n = e.phase === 2 ? 3 : 2;
           for (let i = 0; i < shots_n; i++) {
-            shots.push({ id: uid++, x: e.x + e.dir * 16, y: e.y - 26 - i * 9, vx: e.dir * (2.4 + i * 0.35), vy: 0, t: 200 });
+            shots.push({ id: uid++, x: e.x + e.dir * 24, y: e.y - 38 - i * 13, vx: e.dir * (2.6 + i * 0.35), vy: 0, t: 200 });
           }
           sfx.tone(180, 0.24, 'sawtooth', 0.3, -80);
           e.st = 'cool'; e.t = e.phase === 2 ? 30 : 54;
@@ -427,7 +427,7 @@ function startFaint() {
   G.faint = {
     t: 0, phase: 0, pt: 0,
     cartX: 0, fromX: 0, fromY: 0,
-    sword: { x: player.x + 10, y: player.y - 12, vx: 2.2, vy: -3.4, rot: 0, landed: false },
+    sword: { x: player.x + 12, y: player.y - 20, vx: 2.4, vy: -3.8, rot: 0, landed: false },
   };
   sfx.faint();
   sfx.stopMusic();
@@ -450,7 +450,7 @@ function updateFaint() {
   if (f.phase < 3 && f.t % 5 === 0) {
     for (const side of [-1, 1]) {
       parts.push({
-        x: player.x + side * 3, y: player.y - 17,
+        x: player.x + side * 5, y: player.y - 26,
         vx: side * rnd(0.9, 2.1) + (f.phase === 3 ? 1.4 : 0), vy: rnd(-2.4, -1.2),
         life: irnd(24, 40), c: '#8fd8ff', s: 2, g: 0.16,
       });
@@ -489,7 +489,7 @@ function updateFaint() {
 }
 
 // 熊貓車尺寸
-const CART = { bedH: 15, bedW: 46, wheelR: 6 };
+const CART = { bedH: 20, bedW: 62, wheelR: 8 };
 
 function drawCart() {
   const f = G.faint;
@@ -499,7 +499,7 @@ function drawCart() {
 
   // 車輪（會轉）
   const spin = f.cartX * 0.22;
-  for (const wx of [x - 15, x + 11]) {
+  for (const wx of [x - 20, x + 15]) {
     ctx.fillStyle = '#241a33';
     ctx.beginPath(); ctx.arc(wx, GROUND - CART.wheelR + 1, CART.wheelR, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#b57a44';
@@ -516,21 +516,21 @@ function drawCart() {
 
   // 木頭車斗
   ctx.fillStyle = '#6b4326';
-  ctx.fillRect(x - 24, top + 4, CART.bedW, 5);
+  ctx.fillRect(x - 32, top + 4, CART.bedW, 7);
   ctx.fillStyle = '#b57a44';
-  ctx.fillRect(x - 24, top, CART.bedW, 4);
-  for (let i = 0; i < 6; i++) ctx.fillRect(x - 22 + i * 8, top + 4, 2, 5);
+  ctx.fillRect(x - 32, top, CART.bedW, 5);
+  for (let i = 0; i < 7; i++) ctx.fillRect(x - 29 + i * 9, top + 5, 2, 7);
   ctx.fillStyle = '#6b4326';
-  ctx.fillRect(x - 24, top, 3, 9);
-  ctx.fillRect(x + 19, top, 3, 9);
+  ctx.fillRect(x - 32, top, 3, 12);
+  ctx.fillRect(x + 27, top, 3, 12);
 
   // 玩偶熊貓司機（坐在車頭，會上下晃）
   const bob = Math.sin(f.cartX * 0.18) * 1;
-  drawSprite(S.panda, 1, x + 4, Math.round(top - 14 + bob));
+  drawSprite(S.panda, 1, x + 8, Math.round(top - 21 + bob));
   // 小旗子
   ctx.fillStyle = '#e2465c';
-  ctx.fillRect(x - 22, top - 9, 1, 9);
-  ctx.fillRect(x - 21, top - 9, 6, 4);
+  ctx.fillRect(x - 30, top - 12, 1, 12);
+  ctx.fillRect(x - 29, top - 12, 8, 5);
 }
 
 // ------------------------------ 玩家 ------------------------------
@@ -544,7 +544,7 @@ function hurtPlayer(dmg, fromX) {
   player.atk = 0; player.spin = 0;
   G.shake = 10; G.freeze = 5;
   sfx.hurt();
-  texts.push({ x: player.x, y: player.y - 30, vy: -0.9, life: 40, text: '-' + dmg, c: '#ff8a8a' });
+  texts.push({ x: player.x, y: player.y - 44, vy: -0.9, life: 40, text: '-' + dmg, c: '#ff8a8a' });
   if (player.hp <= 0) {
     player.hp = 0;
     player.dead = true;
@@ -567,10 +567,10 @@ function startAttack() {
 
 function attackHitbox() {
   const c = player.combo;
-  const reach = c === 2 ? 32 : 25;
-  const h = c === 1 ? 16 : 22;
-  const top = player.y - (c === 1 ? 20 : 24);
-  return { x: player.dir > 0 ? player.x + 2 : player.x - 2 - reach, y: top, w: reach, h };
+  const reach = c === 2 ? 46 : 36;
+  const h = c === 1 ? 24 : 32;
+  const top = player.y - (c === 1 ? 30 : 36);
+  return { x: player.dir > 0 ? player.x + 3 : player.x - 3 - reach, y: top, w: reach, h };
 }
 
 function updatePlayer() {
@@ -601,22 +601,22 @@ function updatePlayer() {
       player.spinTick = 7;
       for (const e of enemies) {
         if (e.dead) continue;
-        const d = Math.hypot(e.x - player.x, (e.y - e.h / 2) - (player.y - 11));
-        if (d < 52) damageEnemy(e, 3, player.x, 4);
+        const d = Math.hypot(e.x - player.x, (e.y - e.h / 2) - (player.y - 17));
+        if (d < 68) damageEnemy(e, 3, player.x, 4);
       }
-      for (const sh of shots) if (Math.hypot(sh.x - player.x, sh.y - player.y + 11) < 52) sh.t = 0;
+      for (const sh of shots) if (Math.hypot(sh.x - player.x, sh.y - player.y + 17) < 68) sh.t = 0;
       for (let i = 0; i < 6; i++) {
         const a = rnd(0, Math.PI * 2);
-        parts.push({ x: player.x + Math.cos(a) * 34, y: player.y - 11 + Math.sin(a) * 26, vx: Math.cos(a) * 1.6, vy: Math.sin(a) * 1.2, life: 16, c: '#bfe9ff', s: 2, g: 0 });
+        parts.push({ x: player.x + Math.cos(a) * 46, y: player.y - 17 + Math.sin(a) * 34, vx: Math.cos(a) * 1.8, vy: Math.sin(a) * 1.3, life: 16, c: '#bfe9ff', s: 2, g: 0 });
       }
     }
   } else {
     const attacking = player.atk > 0;
     const move = (s.right ? 1 : 0) - (s.left ? 1 : 0);
-    const maxSpd = attacking ? (player.onGround ? 0.7 : 1.7) : 2.45;
+    const maxSpd = attacking ? (player.onGround ? 0.9 : 2.0) : 2.9;
 
     if (player.knock <= 0) {
-      if (move) { if (!attacking) player.dir = move; player.vx += move * (player.onGround ? 0.85 : 0.55); }
+      if (move) { if (!attacking) player.dir = move; player.vx += move * (player.onGround ? 1.0 : 0.65); }
       player.vx *= player.onGround ? 0.78 : 0.9;
       player.vx = clamp(player.vx, -maxSpd, maxSpd);
     } else {
@@ -629,14 +629,14 @@ function updatePlayer() {
     if (player.coyote > 0) player.coyote--;
     if (player.jumpBuf > 0 && (player.coyote > 0 || player.jumps < 2)) {
       const dbl = player.coyote <= 0;
-      player.vy = dbl ? -7.6 : -8.9;
+      player.vy = dbl ? -8.6 : -10.1;
       player.jumps = dbl ? 2 : 1;
       player.jumpBuf = 0; player.coyote = 0;
       player.onGround = false;
       sfx.jump();
       if (dbl) for (let i = 0; i < 8; i++) parts.push({ x: player.x + rnd(-6, 6), y: player.y, vx: rnd(-1.4, 1.4), vy: rnd(-0.4, 1.2), life: 16, c: '#dff3ff', s: 1, g: 0.05 });
     }
-    if (!s.jump && player.vy < -3) player.vy = -3;   // 可變跳躍高度
+    if (!s.jump && player.vy < -3.4) player.vy = -3.4;   // 可變跳躍高度
 
     // 攻擊 / 必殺
     if (pr.attack && (player.atk <= 0 || player.chain > 0)) startAttack();
@@ -687,7 +687,7 @@ function updatePlayer() {
 function updatePet() {
   if (pet.hidden) return;
   pet.anim++;
-  const target = player.x - player.dir * 26;
+  const target = player.x - player.dir * 34;
   const dx = target - pet.x;
   if (Math.abs(dx) > 90) {           // 落後太多就直接追上來
     pet.x = target;
@@ -705,13 +705,13 @@ function updatePet() {
 
 function drawPet() {
   if (pet.hidden) return;
-  const x = Math.round(pet.x - cam.x - 7);
+  const x = Math.round(pet.x - cam.x - 10);
   if (x < -20 || x > VW + 20) return;
   const bob = pet.onGround ? Math.round(Math.sin(pet.anim / 14) * 1) : 0;
   // 影子
   ctx.fillStyle = 'rgba(0,0,0,0.18)';
-  ctx.fillRect(x + 2, GROUND - 1, 10, 2);
-  drawSprite(S.panda, pet.dir, x, Math.round(pet.y - 14 + bob));
+  ctx.fillRect(x + 3, GROUND - 1, 15, 2);
+  drawSprite(S.panda, pet.dir, x, Math.round(pet.y - 21 + bob));
 }
 
 function updateItems() {
@@ -727,12 +727,12 @@ function updateItems() {
       }
       if (hit) { it.y = GROUND - 4; it.ground = true; }
     }
-    const d = Math.hypot(it.x - player.x, it.y - (player.y - 11));
-    if (d < 34 && !player.dead) {   // 吸附
+    const d = Math.hypot(it.x - player.x, it.y - (player.y - 17));
+    if (d < 42 && !player.dead) {   // 吸附
       it.x += (player.x - it.x) * 0.16;
-      it.y += ((player.y - 11) - it.y) * 0.16;
+      it.y += ((player.y - 17) - it.y) * 0.16;
     }
-    if (d < 12 && !player.dead) {
+    if (d < 16 && !player.dead) {
       it.taken = true;
       if (it.kind === 'coin') { G.score += 60; sfx.coin(); texts.push({ x: it.x, y: it.y - 6, vy: -0.9, life: 34, text: '+60', c: '#ffd45e' }); }
       else if (it.kind === 'heart') { player.hp = Math.min(player.maxHp, player.hp + 1); sfx.heal(); texts.push({ x: it.x, y: it.y - 6, vy: -0.9, life: 34, text: '+HP', c: '#ff8a8a' }); }
@@ -944,6 +944,8 @@ function playerFrame() {
   }
   if (!player.onGround) return player.vy < 0 ? 'jump' : 'fall';
   if (Math.abs(player.vx) > 0.35) return 'run' + (Math.floor(player.anim / 6) % 4);
+  const blinkPhase = player.anim % 190;
+  if (blinkPhase < 7) return 'blink';                     // 待機時偶爾眨眼
   return 'idle' + (Math.floor(player.anim / 30) % 2);
 }
 
@@ -963,15 +965,15 @@ function drawPlayer() {
   if (player.spin > 0) {
     // 旋風斬：旋轉繪製 + 劍光圈
     ctx.save();
-    ctx.translate(sx + PLAYER_W / 2, sy + 16);
+    ctx.translate(sx + PLAYER_W / 2, sy + 24);
     ctx.rotate((G.frame * 0.55) % (Math.PI * 2));
     ctx.globalAlpha = 0.9;
-    ctx.drawImage(S.player[key][1], -PLAYER_W / 2, -16);
+    ctx.drawImage(S.player[key][1], -PLAYER_W / 2, -24);
     ctx.restore();
     ctx.strokeStyle = 'rgba(191,233,255,0.85)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(sx + PLAYER_W / 2, sy + 16, 34 + Math.sin(G.frame * 0.4) * 3, 0, Math.PI * 2);
+    ctx.arc(sx + PLAYER_W / 2, sy + 24, 46 + Math.sin(G.frame * 0.4) * 4, 0, Math.PI * 2);
     ctx.stroke();
     return;
   }
@@ -985,9 +987,9 @@ function drawPlayer() {
     const t = total - player.atk;
     if (t >= 3 && t <= 12) {
       const a = clamp((12 - t) / 8, 0, 1);
-      const cx = player.x - cam.x + player.dir * 8;
-      const cy = player.y - 13;
-      const r = player.combo === 2 ? 30 : 24;
+      const cx = player.x - cam.x + player.dir * 10;
+      const cy = player.y - 20;
+      const r = player.combo === 2 ? 42 : 34;
       const base = player.dir > 0 ? -1.9 : Math.PI + 1.9;
       const sweep = player.dir > 0 ? 1 : -1;
       const ang = 0.45 + (t - 3) * 0.17;
@@ -995,7 +997,7 @@ function drawPlayer() {
       // 外層寬拖尾
       ctx.globalAlpha = a * 0.35;
       ctx.strokeStyle = player.combo === 2 ? '#ffd45e' : '#bfe9ff';
-      ctx.lineWidth = 9;
+      ctx.lineWidth = 12;
       ctx.lineCap = 'round';
       ctx.beginPath();
       ctx.arc(cx, cy, r - 3, base, base + sweep * ang);
@@ -1003,7 +1005,7 @@ function drawPlayer() {
       // 內層亮線
       ctx.globalAlpha = a * 0.95;
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 4;
       ctx.beginPath();
       ctx.arc(cx, cy, r, base, base + sweep * ang);
       ctx.stroke();
@@ -1341,12 +1343,12 @@ function loop(now) {
     ctx.save();
     drawBackground();
     drawGround();
-    const k = 3;
+    const k = 2;
     const idle = S.player['idle' + (Math.floor(G.frame / 34) % 2)][1];
-    ctx.drawImage(idle, Math.round(VW * 0.14), GROUND - 26 * k, PLAYER_W * k, 28 * k);
-    const hop = Math.abs(Math.sin(G.frame / 26)) * 14;
+    ctx.drawImage(idle, Math.round(VW * 0.10), GROUND - 40 * k, PLAYER_W * k, 44 * k);
+    const hop = Math.abs(Math.sin(G.frame / 26)) * 16;
     const sl = S.slime[0]['-1'];
-    ctx.drawImage(sl, Math.round(VW * 0.78), Math.round(GROUND - 10 * 2 - hop), 12 * 2, 10 * 2);
+    ctx.drawImage(sl, Math.round(VW * 0.78), Math.round(GROUND - S.slime[0].h - hop), S.slime[0].w, S.slime[0].h);
     ctx.restore();
   } else {
     render();
