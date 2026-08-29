@@ -35,6 +35,13 @@
 2. **直接發佈分支**：Settings → Pages → Source 選 **Deploy from a branch**，
    分支選你要的、資料夾選 `/ (root)` 即可（專案根目錄已有 `.nojekyll`）。
 
+> ⚠️ **第一次一定要手動去 Settings → Pages 開啟**。GitHub Actions 用的內建 token
+> 沒有「建立 Pages 站台」的權限，在還沒開啟前 workflow 會出現
+> `Get Pages site failed ... Not Found`。開啟之後重跑一次 workflow（Actions 頁面
+> 按 Re-run jobs）或隨便再 push 一次就會成功。
+>
+> 另外 **私有 repo 的 Pages 需要付費方案**；如果是免費帳號，把 repo 設成 public 即可。
+
 網址會是 `https://<帳號>.github.io/<repo 名稱>/`。
 
 ## 本機開發
