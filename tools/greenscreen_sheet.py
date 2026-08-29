@@ -2,7 +2,10 @@
 """把綠幕動作圖轉成對齊好的 sprite sheet。
 
 用法：
-    python3 tools/greenscreen_sheet.py 輸入.jpg 輸出資料夾 名稱1 名稱2 ...
+    python3 tools/greenscreen_sheet.py 輸入.jpg 輸出資料夾 名稱1 名稱2 ... [--air 名稱,名稱]
+
+    --air 列出「腳沒踩地」的姿勢（跳躍、下墜、受傷）。這些姿勢的錨點會用
+          「頭頂 + 站姿身高」推算，讓每一格的錨點都落在同一個語意位置（腳下的地面）。
 
 流程：去背去綠邊 → 連通區域切出每個姿勢（含披風與劍）→ 以頭部中心與地平線對齊
      → 輸出共用畫格的 sheet.png 與 frames.json → 驗證有沒有被裁切。
@@ -60,33 +63,79 @@ def label_blobs(mask):
     return lab, blobs
 
 
-def build(src, dst, names):
+def merge_orphans(lab, blobs):
+    """把落單的小區塊（掉在地上的劍、飛濺的眼淚）併回最近的角色。"""
+    if not blobs:
+        return blobs
+    big_px = max(b["px"] for b in blobs)
+    mains = [b for b in blobs if b["px"] >= big_px * 0.3]
+    orphans = [b for b in blobs if b["px"] < big_px * 0.3]
+    for b in blobs:
+        ys, xs = np.where(lab == b["id"])
+        b["cx"], b["cy"] = xs.mean(), ys.mean()
+        b["ids"] = [b["id"]]
+    for o in orphans:
+        near = min(mains, key=lambda m: (m["cx"] - o["cx"]) ** 2 + (m["cy"] - o["cy"]) ** 2)
+        near["ids"].append(o["id"])
+        near["px"] += o["px"]
+        print("  （把 %d px 的落單區塊併入第 %d 個姿勢）" % (o["px"], mains.index(near) + 1))
+    mains.sort(key=lambda b: b["x0"])
+    return mains
+
+
+def build(src, dst, names, air=()):
     rgb, alpha = key_out(src)
     mask = alpha > SOLID
     lab, blobs = label_blobs(mask)
+    blobs = merge_orphans(lab, blobs)
     print("偵測到 %d 個姿勢" % len(blobs))
     if len(blobs) != len(names):
         print("!! 姿勢數與名稱數不符（%d vs %d），請確認圖上的角色沒有互相碰到"
               % (len(blobs), len(names)))
 
     ground = int(np.where(mask.any(axis=1))[0].max())      # 最低的腳當地平線
-    PADX, TOPY = 200, 380
-    CW, CH = PADX * 2, TOPY + 40
 
-    frames, srcpx = [], []
+    # 站姿身高：拿來推算空中姿勢的「虛擬地面」，讓每一格的錨點語意一致
+    std_h = None
     for blob, nm in zip(blobs, names):
-        m = lab == blob["id"]
-        fig = Image.fromarray(np.dstack([rgb, np.where(m, alpha, 0) * 255]).astype(np.uint8), "RGBA")
+        if nm in air:
+            continue
+        solid = (alpha > SOLID) & np.isin(lab, blob["ids"])
+        body = np.where(solid.sum(axis=1) > 14)[0]
+        h = int(body.max() - body.min() + 1)
+        std_h = h if std_h is None else std_h
+    if std_h is None:
+        std_h = 0
+
+    # 先量每個姿勢相對於錨點的伸展範圍，畫布才不會把披風切掉
+    info = []
+    for blob, nm in zip(blobs, names):
+        m = np.isin(lab, blob["ids"])
         solid = (alpha > SOLID) & m
         rowW = solid.sum(axis=1)
-        top = int(np.where(rowW > 14)[0].min())            # 夠寬的列才算身體，避開細長的劍
+        top = int(np.where(rowW > 14)[0].min())
         hb = solid[top:top + 70]
         hx = np.where(hb.any(axis=0))[0]
         head_cx = (hx.min() + hx.max()) / 2
+        ys, xs = np.where(solid)
+        anchor_y = (top + std_h) if nm in air else ground   # 空中姿勢用「虛擬地面」
+        info.append(dict(m=m, nm=nm, head_cx=head_cx, top=top, anchor_y=anchor_y,
+                         l=head_cx - xs.min(), r=xs.max() - head_cx,
+                         u=anchor_y - ys.min(), d=ys.max() - anchor_y, px=int(m.sum())))
+    PADX = int(max(max(i["l"] for i in info), max(i["r"] for i in info))) + 6
+    UP = int(max(i["u"] for i in info)) + 6
+    DOWN = int(max(i["d"] for i in info)) + 6
+    CW, CH = PADX * 2, UP + DOWN
+    TOPY = UP                                          # 錨點在畫布中的 y
+
+    frames, srcpx = [], []
+    for i in info:
+        m = i["m"]
+        fig = Image.fromarray(np.dstack([rgb, np.where(m, alpha, 0) * 255]).astype(np.uint8), "RGBA")
         canvas = Image.new("RGBA", (CW, CH), (0, 0, 0, 0))
-        canvas.paste(fig, (int(PADX - head_cx), TOPY - ground), fig)
+        canvas.paste(fig, (int(PADX - i["head_cx"]), int(TOPY - i["anchor_y"])), fig)
         frames.append(canvas)
-        srcpx.append(int(m.sum()))
+        srcpx.append(i["px"])
 
     bbs = [f.getbbox() for f in frames]
     x0, y0 = min(b[0] for b in bbs), min(b[1] for b in bbs)
@@ -117,7 +166,13 @@ def build(src, dst, names):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 4:
+    args = sys.argv[1:]
+    air = ()
+    if "--air" in args:
+        k = args.index("--air")
+        air = tuple(args[k + 1].split(","))
+        args = args[:k] + args[k + 2:]
+    if len(args) < 3:
         print(__doc__)
         sys.exit(1)
-    build(sys.argv[1], sys.argv[2], sys.argv[3:])
+    build(args[0], args[1], args[2:], air)

@@ -5,12 +5,17 @@
     "walk2",
     "jump",
     "atk_up",
-    "atk_thrust"
+    "atk_thrust",
+    "fall",
+    "hurt",
+    "sit_cry",
+    "victory"
   ],
-  "frame_w": 293,
-  "frame_h": 314,
+  "frame_w": 358,
+  "frame_h": 322,
   "anchor": {
-    "head_center_x": 118,
-    "ground_y": 313
-  }
+    "x": 179,
+    "y": 317
+  },
+  "note": "anchor 是角色的頭部中心 x 與地平線 y；空中姿勢以頭頂對齊，其餘以地平線對齊"
 }
