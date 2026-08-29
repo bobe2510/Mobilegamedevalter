@@ -14,9 +14,10 @@ const GROUND = 228;            // 地面高度
 const GRAV = 0.62;
 const MAXFALL = 9;
 
+let RES = 2;                    // 內部解析度倍率，resize() 會依裝置像素密度調整
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-canvas.width = VW; canvas.height = VH;
+canvas.width = VW * RES; canvas.height = VH * RES;
 ctx.imageSmoothingEnabled = false;
 
 const S = buildSprites();
@@ -75,6 +76,65 @@ function drawSprite(spr, dir, x, y) {
   ctx.drawImage(img, Math.round(x), Math.round(y));
 }
 
+// ------------------------ 高解析度角色（可選素材） ------------------------
+// assets/character/anim/ 有 sheet.png + frames.json 就自動改用插畫版角色，
+// 找不到就沿用程式繪製的點陣角色。
+const HERO_H = 70;              // 站姿在遊戲座標裡的高度（點陣版是 40）
+const HERO = {
+  ready: false, img: null, meta: null, scale: 1,
+  fw: 0, fh: 0, ax: 0, ay: 0, index: {},
+};
+
+(function loadHero() {
+  const img = new Image();
+  let meta = null;
+  const done = () => {
+    if (!meta || !img.naturalWidth) return;
+    const standH = 251;                       // 站姿在來源圖裡的身高（見 anim/README）
+    HERO.img = img; HERO.meta = meta;
+    HERO.scale = HERO_H / standH;
+    HERO.fw = meta.frame_w; HERO.fh = meta.frame_h;
+    HERO.ax = meta.anchor.x; HERO.ay = meta.anchor.y;
+    meta.frames.forEach((n, i) => { HERO.index[n] = i; });
+    HERO.ready = true;
+  };
+  img.onload = done;
+  img.onerror = () => { HERO.ready = false; };
+  img.src = 'assets/character/anim/sheet.png';
+  fetch('assets/character/anim/frames.json')
+    .then((r) => (r.ok ? r.json() : null))
+    .then((m) => { if (m && m.frames) { meta = m; done(); } })
+    .catch(() => {});
+})();
+
+// 依狀態挑影格
+function heroFrame() {
+  if (player.dead) return 'sit_cry';
+  if (G.victoryT > 0) return 'victory';
+  if (player.spin > 0) return 'atk_thrust';
+  if (player.atk > 0) {
+    const total = player.combo === 2 ? 22 : 18;
+    return (total - player.atk) < 6 ? 'atk_up' : 'atk_thrust';
+  }
+  if (player.inv > 58 && player.knock > 0) return 'hurt';
+  if (!player.onGround) return player.vy < 0 ? 'jump' : 'fall';
+  if (Math.abs(player.vx) > 0.35) return (Math.floor(player.anim / 9) % 2) ? 'walk1' : 'walk2';
+  return 'idle';
+}
+
+function drawHero(key, dir, px, py) {
+  const i = HERO.index[key] != null ? HERO.index[key] : 0;
+  const s = HERO.scale;
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;        // 插畫要平滑縮放，點陣不要
+  ctx.translate(Math.round(px - cam.x), Math.round(py));
+  if (dir < 0) ctx.scale(-1, 1);
+  ctx.drawImage(HERO.img, i * HERO.fw, 0, HERO.fw, HERO.fh,
+    -HERO.ax * s, -HERO.ay * s, HERO.fw * s, HERO.fh * s);
+  ctx.imageSmoothingEnabled = false;
+  ctx.restore();
+}
+
 // ------------------------------ 遊戲狀態 ------------------------------
 const G = {
   mode: 'title',      // title | play | dead | clear | pause
@@ -89,12 +149,14 @@ const G = {
   banner: null,
   bannerT: 0,
   faint: null,
+  victoryT: 0,
 };
 
 const cam = { x: 0, lockMin: 0, lockMax: Infinity };
+let skyCache = null;   // 天空漸層快取
 
 const player = {
-  x: 60, y: GROUND, vx: 0, vy: 0, w: 20, h: 34, dir: 1,
+  x: 60, y: GROUND, vx: 0, vy: 0, w: 26, h: 60, dir: 1,
   onGround: false, coyote: 0, jumpBuf: 0, jumps: 0,
   hp: 5, maxHp: 5, inv: 0, rage: 0, maxRage: 100,
   atk: 0, combo: 0, chain: 0, spin: 0, spinTick: 0,
@@ -144,8 +206,8 @@ function makeStage(n) {
   const plats = [];
   for (let x = 380; x < len - 620; x += 150 + rng() * 210) {
     if (rng() < 0.62) {
-      const w = 58 + rng() * 62;
-      plats.push({ x: Math.round(x), y: Math.round(GROUND - (58 + rng() * 66)), w: Math.round(w), h: 9 });
+      const w = 70 + rng() * 70;
+      plats.push({ x: Math.round(x), y: Math.round(GROUND - (72 + rng() * 68)), w: Math.round(w), h: 10 });
     }
   }
 
@@ -158,7 +220,7 @@ function makeStage(n) {
     const x = 320 + (len - 900) * (i / count) + rng() * 90;
     const t = pool[Math.floor(rng() * pool.length)];
     let y = GROUND;
-    if (t === 'bat') y = GROUND - 74 - rng() * 55;
+    if (t === 'bat') y = GROUND - 92 - rng() * 55;
     else if (rng() < 0.25) {
       const p = plats.find((pp) => Math.abs(pp.x + pp.w / 2 - x) < 70);
       if (p) y = p.y;
@@ -201,10 +263,10 @@ function banner(text, t = 90) { G.banner = text; G.bannerT = t; }
 
 // ------------------------------ 敵人 ------------------------------
 const ETYPE = {
-  slime: { w: 17, h: 14, hp: 2, score: 60, touch: 1 },
-  bat: { w: 20, h: 11, hp: 2, score: 80, touch: 1 },
-  orc: { w: 19, h: 23, hp: 5, score: 160, touch: 0 },
-  boss: { w: 44, h: 64, hp: 55, score: 2000, touch: 1 },
+  slime: { w: 22, h: 18, hp: 2, score: 60, touch: 1 },
+  bat: { w: 25, h: 14, hp: 2, score: 80, touch: 1 },
+  orc: { w: 24, h: 29, hp: 5, score: 160, touch: 0 },
+  boss: { w: 61, h: 89, hp: 55, score: 2000, touch: 1 },
 };
 
 function makeEnemy(type, x, y, stageN) {
@@ -311,7 +373,7 @@ function updateEnemy(e) {
         if (e.t-- <= 0) { e.st = 'swing'; e.t = 12; }
       } else if (e.st === 'swing') {
         if (e.t > 6) {
-          e.atkBox = { x: e.dir > 0 ? e.x + 6 : e.x - 38, y: e.y - 26, w: 32, h: 26 };
+          e.atkBox = { x: e.dir > 0 ? e.x + 8 : e.x - 48, y: e.y - 33, w: 40, h: 33 };
         }
         if (e.t-- <= 0) { e.st = 'cool'; e.t = 34; }
       } else if (e.st === 'cool') {
@@ -344,14 +406,14 @@ function updateEnemy(e) {
           G.shake = 12; sfx.hit();
           e.st = 'cool'; e.t = e.phase === 2 ? 26 : 48;
         }
-        if (!e.onGround) e.atkBox = { x: e.x - 32, y: e.y - 64, w: 64, h: 64 };
+        if (!e.onGround) e.atkBox = { x: e.x - 44, y: e.y - 89, w: 88, h: 89 };
       } else if (e.st === 'cast') {
         e.vx = 0;
         e.dir = dx > 0 ? 1 : -1;
         if (e.t-- <= 0) {
           const shots_n = e.phase === 2 ? 3 : 2;
           for (let i = 0; i < shots_n; i++) {
-            shots.push({ id: uid++, x: e.x + e.dir * 24, y: e.y - 38 - i * 13, vx: e.dir * (2.6 + i * 0.35), vy: 0, t: 200 });
+            shots.push({ id: uid++, x: e.x + e.dir * 32, y: e.y - 52 - i * 17, vx: e.dir * (2.8 + i * 0.35), vy: 0, t: 200 });
           }
           sfx.tone(180, 0.24, 'sawtooth', 0.3, -80);
           e.st = 'cool'; e.t = e.phase === 2 ? 30 : 54;
@@ -427,7 +489,7 @@ function startFaint() {
   G.faint = {
     t: 0, phase: 0, pt: 0,
     cartX: 0, fromX: 0, fromY: 0,
-    sword: { x: player.x + 12, y: player.y - 20, vx: 2.4, vy: -3.8, rot: 0, landed: false },
+    sword: { x: player.x + 16, y: player.y - 34, vx: 2.8, vy: -4.4, rot: 0, landed: false },
   };
   sfx.faint();
   sfx.stopMusic();
@@ -450,7 +512,7 @@ function updateFaint() {
   if (f.phase < 3 && f.t % 5 === 0) {
     for (const side of [-1, 1]) {
       parts.push({
-        x: player.x + side * 5, y: player.y - 26,
+        x: player.x + side * 7, y: player.y - 40,
         vx: side * rnd(0.9, 2.1) + (f.phase === 3 ? 1.4 : 0), vy: rnd(-2.4, -1.2),
         life: irnd(24, 40), c: '#8fd8ff', s: 2, g: 0.16,
       });
@@ -489,7 +551,7 @@ function updateFaint() {
 }
 
 // 熊貓車尺寸
-const CART = { bedH: 20, bedW: 62, wheelR: 8 };
+const CART = { bedH: 26, bedW: 82, wheelR: 11 };
 
 function drawCart() {
   const f = G.faint;
@@ -499,7 +561,7 @@ function drawCart() {
 
   // 車輪（會轉）
   const spin = f.cartX * 0.22;
-  for (const wx of [x - 20, x + 15]) {
+  for (const wx of [x - 26, x + 20]) {
     ctx.fillStyle = '#241a33';
     ctx.beginPath(); ctx.arc(wx, GROUND - CART.wheelR + 1, CART.wheelR, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#b57a44';
@@ -516,21 +578,21 @@ function drawCart() {
 
   // 木頭車斗
   ctx.fillStyle = '#6b4326';
-  ctx.fillRect(x - 32, top + 4, CART.bedW, 7);
+  ctx.fillRect(x - 42, top + 5, CART.bedW, 9);
   ctx.fillStyle = '#b57a44';
-  ctx.fillRect(x - 32, top, CART.bedW, 5);
-  for (let i = 0; i < 7; i++) ctx.fillRect(x - 29 + i * 9, top + 5, 2, 7);
+  ctx.fillRect(x - 42, top, CART.bedW, 6);
+  for (let i = 0; i < 7; i++) ctx.fillRect(x - 38 + i * 12, top + 6, 3, 9);
   ctx.fillStyle = '#6b4326';
-  ctx.fillRect(x - 32, top, 3, 12);
-  ctx.fillRect(x + 27, top, 3, 12);
+  ctx.fillRect(x - 42, top, 4, 16);
+  ctx.fillRect(x + 36, top, 4, 16);
 
   // 玩偶熊貓司機（坐在車頭，會上下晃）
   const bob = Math.sin(f.cartX * 0.18) * 1;
-  drawSprite(S.panda, 1, x + 8, Math.round(top - 21 + bob));
+  drawSprite(S.panda, 1, x + 12, Math.round(top - 29 + bob));
   // 小旗子
   ctx.fillStyle = '#e2465c';
-  ctx.fillRect(x - 30, top - 12, 1, 12);
-  ctx.fillRect(x - 29, top - 12, 8, 5);
+  ctx.fillRect(x - 40, top - 16, 2, 16);
+  ctx.fillRect(x - 38, top - 16, 10, 6);
 }
 
 // ------------------------------ 玩家 ------------------------------
@@ -544,7 +606,7 @@ function hurtPlayer(dmg, fromX) {
   player.atk = 0; player.spin = 0;
   G.shake = 10; G.freeze = 5;
   sfx.hurt();
-  texts.push({ x: player.x, y: player.y - 44, vy: -0.9, life: 40, text: '-' + dmg, c: '#ff8a8a' });
+  texts.push({ x: player.x, y: player.y - 74, vy: -0.9, life: 40, text: '-' + dmg, c: '#ff8a8a' });
   if (player.hp <= 0) {
     player.hp = 0;
     player.dead = true;
@@ -567,9 +629,9 @@ function startAttack() {
 
 function attackHitbox() {
   const c = player.combo;
-  const reach = c === 2 ? 46 : 36;
-  const h = c === 1 ? 24 : 32;
-  const top = player.y - (c === 1 ? 30 : 36);
+  const reach = c === 2 ? 80 : 62;
+  const h = c === 1 ? 42 : 56;
+  const top = player.y - (c === 1 ? 52 : 64);
   return { x: player.dir > 0 ? player.x + 3 : player.x - 3 - reach, y: top, w: reach, h };
 }
 
@@ -601,13 +663,13 @@ function updatePlayer() {
       player.spinTick = 7;
       for (const e of enemies) {
         if (e.dead) continue;
-        const d = Math.hypot(e.x - player.x, (e.y - e.h / 2) - (player.y - 17));
-        if (d < 68) damageEnemy(e, 3, player.x, 4);
+        const d = Math.hypot(e.x - player.x, (e.y - e.h / 2) - (player.y - 30));
+        if (d < 105) damageEnemy(e, 3, player.x, 4);
       }
-      for (const sh of shots) if (Math.hypot(sh.x - player.x, sh.y - player.y + 17) < 68) sh.t = 0;
+      for (const sh of shots) if (Math.hypot(sh.x - player.x, sh.y - player.y + 30) < 105) sh.t = 0;
       for (let i = 0; i < 6; i++) {
         const a = rnd(0, Math.PI * 2);
-        parts.push({ x: player.x + Math.cos(a) * 46, y: player.y - 17 + Math.sin(a) * 34, vx: Math.cos(a) * 1.8, vy: Math.sin(a) * 1.3, life: 16, c: '#bfe9ff', s: 2, g: 0 });
+        parts.push({ x: player.x + Math.cos(a) * 70, y: player.y - 30 + Math.sin(a) * 52, vx: Math.cos(a) * 2.2, vy: Math.sin(a) * 1.6, life: 16, c: '#bfe9ff', s: 3, g: 0 });
       }
     }
   } else {
@@ -687,7 +749,7 @@ function updatePlayer() {
 function updatePet() {
   if (pet.hidden) return;
   pet.anim++;
-  const target = player.x - player.dir * 34;
+  const target = player.x - player.dir * 46;
   const dx = target - pet.x;
   if (Math.abs(dx) > 90) {           // 落後太多就直接追上來
     pet.x = target;
@@ -705,13 +767,13 @@ function updatePet() {
 
 function drawPet() {
   if (pet.hidden) return;
-  const x = Math.round(pet.x - cam.x - 10);
+  const x = Math.round(pet.x - cam.x - 9);
   if (x < -20 || x > VW + 20) return;
   const bob = pet.onGround ? Math.round(Math.sin(pet.anim / 14) * 1) : 0;
   // 影子
   ctx.fillStyle = 'rgba(0,0,0,0.18)';
-  ctx.fillRect(x + 3, GROUND - 1, 15, 2);
-  drawSprite(S.panda, pet.dir, x, Math.round(pet.y - 21 + bob));
+  ctx.fillRect(x + 2, GROUND - 1, 15, 2);
+  drawSprite(S.panda, pet.dir, x, Math.round(pet.y - 29 + bob));
 }
 
 function updateItems() {
@@ -727,12 +789,12 @@ function updateItems() {
       }
       if (hit) { it.y = GROUND - 4; it.ground = true; }
     }
-    const d = Math.hypot(it.x - player.x, it.y - (player.y - 17));
-    if (d < 42 && !player.dead) {   // 吸附
+    const d = Math.hypot(it.x - player.x, it.y - (player.y - 30));
+    if (d < 54 && !player.dead) {   // 吸附
       it.x += (player.x - it.x) * 0.16;
-      it.y += ((player.y - 17) - it.y) * 0.16;
+      it.y += ((player.y - 30) - it.y) * 0.16;
     }
-    if (d < 16 && !player.dead) {
+    if (d < 22 && !player.dead) {
       it.taken = true;
       if (it.kind === 'coin') { G.score += 60; sfx.coin(); texts.push({ x: it.x, y: it.y - 6, vy: -0.9, life: 34, text: '+60', c: '#ffd45e' }); }
       else if (it.kind === 'heart') { player.hp = Math.min(player.maxHp, player.hp + 1); sfx.heal(); texts.push({ x: it.x, y: it.y - 6, vy: -0.9, life: 34, text: '+HP', c: '#ff8a8a' }); }
@@ -772,6 +834,7 @@ function update() {
   G.frame++;
   if (G.freeze > 0) { G.freeze--; return; }
   if (G.bannerT > 0) G.bannerT--;
+  if (G.victoryT > 0) G.victoryT--;
 
   updatePlayer();
   if (G.faint) updateFaint();
@@ -793,6 +856,7 @@ function update() {
   // 過關判定
   if (!stage.cleared && stage.bossDead && player.x > stage.portalX - 8 && Math.abs(player.y - GROUND) < 40) {
     stage.cleared = true;
+    G.victoryT = 70;
     G.score += 500 + player.hp * 100;
     setTier(G.tier + (stage.isBoss ? 0.10 : 0.05));   // 熊貓：撐得住，那就加點料
     sfx.clear();
@@ -808,9 +872,12 @@ function update() {
 // ------------------------------ 繪圖 ------------------------------
 function drawBackground() {
   const th = stage.theme;
-  const g = ctx.createLinearGradient(0, 0, 0, GROUND);
-  g.addColorStop(0, th.sky[0]); g.addColorStop(1, th.sky[1]);
-  ctx.fillStyle = g;
+  if (!skyCache || skyCache.theme !== th) {
+    const g = ctx.createLinearGradient(0, 0, 0, GROUND);
+    g.addColorStop(0, th.sky[0]); g.addColorStop(1, th.sky[1]);
+    skyCache = { theme: th, grad: g };
+  }
+  ctx.fillStyle = skyCache.grad;
   ctx.fillRect(0, 0, VW, VH);
 
   // 太陽 / 月亮
@@ -950,6 +1017,7 @@ function playerFrame() {
 }
 
 function drawPlayer() {
+  if (HERO.ready) return drawPlayerHD();
   if (player.dead) {
     // 哭哭（坐在地上／被熊貓車載走）
     const key = 'cry' + (Math.floor(G.frame / 14) % 2);
@@ -1009,6 +1077,59 @@ function drawPlayer() {
       ctx.beginPath();
       ctx.arc(cx, cy, r, base, base + sweep * ang);
       ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+
+function drawPlayerHD() {
+  const key = heroFrame();
+  if (player.inv > 0 && !player.dead && player.spin <= 0 && G.frame % 6 < 2) return;
+
+  if (player.spin > 0) {
+    // 旋風斬：原地旋轉 + 劍光圈
+    const cx = player.x - cam.x, cy = player.y - HERO_H * 0.5;
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.translate(cx, cy);
+    ctx.rotate((G.frame * 0.5) % (Math.PI * 2));
+    const s = HERO.scale;
+    ctx.drawImage(HERO.img, HERO.index.atk_thrust * HERO.fw, 0, HERO.fw, HERO.fh,
+      -HERO.ax * s, -HERO.ay * s + HERO_H * 0.5, HERO.fw * s, HERO.fh * s);
+    ctx.imageSmoothingEnabled = false;
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(191,233,255,0.85)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 56 + Math.sin(G.frame * 0.4) * 5, 0, Math.PI * 2);
+    ctx.stroke();
+    return;
+  }
+
+  drawHero(key, player.dir, player.x, player.y);
+
+  // 劍光
+  if (player.atk > 0) {
+    const total = player.combo === 2 ? 22 : 18;
+    const t = total - player.atk;
+    if (t >= 3 && t <= 12) {
+      const a = clamp((12 - t) / 8, 0, 1);
+      const cx = player.x - cam.x + player.dir * 16;
+      const cy = player.y - 36;
+      const r = player.combo === 2 ? 72 : 58;
+      const base = player.dir > 0 ? -1.9 : Math.PI + 1.9;
+      const sweep = player.dir > 0 ? 1 : -1;
+      const ang = 0.45 + (t - 3) * 0.17;
+      ctx.save();
+      ctx.globalAlpha = a * 0.32;
+      ctx.strokeStyle = player.combo === 2 ? '#ffd45e' : '#bfe9ff';
+      ctx.lineWidth = 18;
+      ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.arc(cx, cy, r - 6, base, base + sweep * ang); ctx.stroke();
+      ctx.globalAlpha = a * 0.9;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.arc(cx, cy, r, base, base + sweep * ang); ctx.stroke();
       ctx.restore();
     }
   }
@@ -1210,6 +1331,7 @@ function drawHUD() {
 }
 
 function render() {
+  ctx.setTransform(RES, 0, 0, RES, 0, 0);
   ctx.save();
   if (G.shake > 0.4) ctx.translate(rnd(-G.shake, G.shake) * 0.5, rnd(-G.shake, G.shake) * 0.5);
   drawBackground();
@@ -1226,6 +1348,7 @@ function render() {
 function newGame() {
   G.score = 0;
   G.faint = null;
+  G.victoryT = 0;
   player.hp = player.maxHp;
   player.rage = 0;
   G.mode = 'play';
@@ -1340,12 +1463,24 @@ function loop(now) {
   }
   if (G.mode === 'title' || G.mode === 'dead') {
     // 標題／結束畫面：背景 + 待機中的女騎士
+    ctx.setTransform(RES, 0, 0, RES, 0, 0);
     ctx.save();
     drawBackground();
     drawGround();
-    const k = 2;
-    const idle = S.player['idle' + (Math.floor(G.frame / 34) % 2)][1];
-    ctx.drawImage(idle, Math.round(VW * 0.10), GROUND - 40 * k, PLAYER_W * k, 44 * k);
+    if (HERO.ready) {
+      const sc = HERO.scale * 1.9;
+      ctx.save();
+      ctx.imageSmoothingEnabled = true;
+      ctx.translate(Math.round(VW * 0.20), GROUND);
+      ctx.drawImage(HERO.img, HERO.index.idle * HERO.fw, 0, HERO.fw, HERO.fh,
+        -HERO.ax * sc, -HERO.ay * sc, HERO.fw * sc, HERO.fh * sc);
+      ctx.imageSmoothingEnabled = false;
+      ctx.restore();
+    } else {
+      const k = 2;
+      const idle = S.player['idle' + (Math.floor(G.frame / 34) % 2)][1];
+      ctx.drawImage(idle, Math.round(VW * 0.10), GROUND - 40 * k, PLAYER_W * k, 44 * k);
+    }
     const hop = Math.abs(Math.sin(G.frame / 26)) * 16;
     const sl = S.slime[0]['-1'];
     ctx.drawImage(sl, Math.round(VW * 0.78), Math.round(GROUND - S.slime[0].h - hop), S.slime[0].w, S.slime[0].h);
@@ -1362,12 +1497,18 @@ function resize() {
   const w = wrap.clientWidth, h = wrap.clientHeight;
   // 直向手機用較窄的視野，角色在螢幕上會比較大；橫向則拉寬
   const want = clamp(Math.round(VH * (w / h)), VW_MIN, VW_MAX);
-  if (want !== VW) {
-    VW = want;
-    canvas.width = VW;
-    ctx.imageSmoothingEnabled = false;   // 改變畫布尺寸會重置 context
-  }
+  if (want !== VW) VW = want;
   const scale = Math.min(w / VW, h / VH);
+  // 內部像素直接對齊裝置像素，瀏覽器就不用再縮放一次（插畫才不會糊或閃爍）
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const res = clamp(Math.round(scale * dpr), 1, 3);
+  if (canvas.width !== VW * res || canvas.height !== VH * res) {
+    RES = res;
+    canvas.width = VW * RES;
+    canvas.height = VH * RES;
+    ctx.imageSmoothingEnabled = false;   // 改變畫布尺寸會重置 context
+    skyCache = null;
+  }
   canvas.style.width = Math.floor(VW * scale) + 'px';
   canvas.style.height = Math.floor(VH * scale) + 'px';
 }
@@ -1376,4 +1517,6 @@ addEventListener('orientationchange', () => setTimeout(resize, 120));
 resize();
 
 // 對外除錯用
-window.__game = { G, player, S, get enemies() { return enemies; }, get stage() { return stage; }, newGame, startStage, cam };
+window.__game = { G, player, S, HERO, get enemies() { return enemies; }, get stage() { return stage; },
+  get VW() { return VW; }, VH, get RES() { return RES; }, GROUND, HERO_H,
+  newGame, startStage, cam };

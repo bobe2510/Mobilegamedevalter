@@ -492,6 +492,14 @@ export const PANDA = [
   'xxxxx1xx1xxxxx',
   '.xxxxxxxxxxxx.',
   '..XXXXXXXXXX..',
+  '..11xxxxxx11..',
+  '.11xxxxxxxx11.',
+  '.11xxxxxxxx11.',
+  '.11xxxxxxxx11.',
+  '..1xxxxxxxx1..',
+  '..xxxxxxxxxx..',
+  '...11xxxx11...',
+  '...11....11...',
 ];
 
 // 倒地時掉在旁邊的劍

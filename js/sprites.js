@@ -54,16 +54,16 @@ export function buildSprites() {
     return pair(k === 1 ? base : scaleUp(base, k));
   };
 
-  S.slime = [mk(SLIME, 1.5)];
-  S.bat = [mk(BAT_A, 1.5), mk(BAT_B, 1.5)];
-  S.orc = [mk(ORC, 1.5)];
-  S.boss = [mk(BOSS, 2.6)];
+  S.slime = [mk(SLIME, 1.9)];
+  S.bat = [mk(BAT_A, 1.9), mk(BAT_B, 1.9)];
+  S.orc = [mk(ORC, 1.9)];
+  S.boss = [mk(BOSS, 3.6)];
   S.heart = mk(HEART);
   S.coin = mk(COIN);
   S.potion = mk(POTION);
   S.fireball = mk(FIREBALL);
   S.portal = mk(PORTAL, 2.5);
-  S.panda = mk(PANDA, 1.5);
+  S.panda = mk(PANDA, 1.3);
   S.swordFlat = mk(SWORD_FLAT);
 
   // 敵人受擊閃白版本
