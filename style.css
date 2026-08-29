@@ -392,3 +392,24 @@ details.help[open] > summary::after { content: ' ▴'; }
 }
 
 .smallbtn:active { transform: translateY(1px); }
+
+/* ------------------------- 過場 ------------------------- */
+.cutskip {
+  position: absolute;
+  top: max(8px, env(safe-area-inset-top));
+  left: max(8px, env(safe-area-inset-left));
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink);
+  background: rgba(20, 14, 44, .7);
+  border: 1px solid #4b3a86;
+  border-radius: 9px;
+  cursor: pointer;
+  z-index: 18;
+}
+
+.cutskip:active { transform: translateY(1px); }
+
+.replay { margin-top: 10px; display: grid; gap: 6px; }
+.replay .smallbtn { margin: 0; }

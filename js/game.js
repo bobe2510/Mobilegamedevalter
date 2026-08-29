@@ -5,6 +5,8 @@
 import { buildSprites, PLAYER_FOOT, PLAYER_W } from './sprites.js';
 import { Input } from './input.js';
 import { Sfx } from './audio.js';
+import { Cutscene } from './cutscene.js';
+import { scriptFor, midFor } from './story.js';
 
 // ------------------------------ 基本設定 ------------------------------
 let VW = 480;                  // 虛擬解析度寬（依螢幕比例調整：直向較窄、橫向較寬）
@@ -34,6 +36,7 @@ const ui = {
   finalStage: document.getElementById('finalStage'),
   muteBtn: document.getElementById('muteBtn'),
   pauseBtn: document.getElementById('pauseBtn'),
+  cutSkip: document.getElementById('cutSkip'),
 };
 
 input.bindTouch(document.body);
@@ -159,7 +162,7 @@ function drawHero(key, dir, px, py) {
 
 // ------------------------------ 遊戲狀態 ------------------------------
 const G = {
-  mode: 'title',      // title | play | dead | clear | pause
+  mode: 'title',      // title | play | cut | dead | pause
   stage: 1,
   score: 0,
   best: +(localStorage.getItem('kg_best') || 0),
@@ -493,8 +496,6 @@ function damageEnemy(e, dmg, fromX, knock = 3.2) {
       stage.bossDead = true;
       G.bosses++;
       localStorage.setItem('kg_bosses', String(G.bosses));
-      const unlocked = ROSTER.find((c) => c.unlockBoss === G.bosses);
-      if (unlocked) setTimeout(() => banner('解鎖：' + unlocked.name + '！', 120), 1500);
       cam.lockMin = 0; cam.lockMax = Infinity;
       banner('魔王討伐成功！', 110);
       sfx.clear();
@@ -954,10 +955,12 @@ function update() {
     setTier(G.tier + (stage.isBoss ? 0.10 : 0.05));   // 熊貓：撐得住，那就加點料
     sfx.clear();
     banner('過關！', 90);
+    const last = stage.isBoss && G.stage >= FINAL_STAGE;
     setTimeout(() => {
       if (G.mode !== 'play') return;
+      if (last) { finishGame(); return; }
       player.hp = Math.min(player.maxHp, player.hp + 1);
-      startStage(G.stage + 1);
+      advanceStage(G.stage + 1);
     }, 1100);
   }
 }
@@ -1469,7 +1472,7 @@ function drawHUD() {
   }
 }
 
-function render() {
+function render(withHud = true) {
   ctx.setTransform(RES, 0, 0, RES, 0, 0);
   ctx.save();
   if (G.shake > 0.4) ctx.translate(rnd(-G.shake, G.shake) * 0.5, rnd(-G.shake, G.shake) * 0.5);
@@ -1480,7 +1483,96 @@ function render() {
   drawPet();
   drawPlayer();
   ctx.restore();
-  drawHUD();
+  if (withHud) drawHUD();
+}
+
+// ------------------------------ 過場 ------------------------------
+// 第 FINAL_STAGE 關的魔王 = 該角色故事的最終魔王，打完會播結局。
+// 想改成更長／更短的一輪，只要動這個數字。
+const FINAL_STAGE = 9;
+
+const FACE = { knight: 1, mage: 1, elder: 1 };
+const cut = new Cutscene({
+  sfx,
+  portraitOf: (who) => (FACE[who] ? `assets/character/${who}/face.png` : null),
+  // 熊貓沒有頭像圖，直接用遊戲裡的跟班 sprite 放大
+  drawMascot: (c, x, y, size) => {
+    c.save();
+    c.beginPath();
+    c.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+    c.fillStyle = '#2b2450';
+    c.fill();
+    c.clip();
+    const spr = S.panda[1];
+    const k = (size * 0.86) / spr.height;
+    c.drawImage(spr, Math.round(x + (size - spr.width * k) / 2), Math.round(y + size * 0.16),
+      Math.round(spr.width * k), Math.round(spr.height * k));
+    c.restore();
+    c.strokeStyle = '#6b58bd';
+    c.beginPath();
+    c.arc(x + size / 2, y + size / 2, size / 2 - 0.5, 0, Math.PI * 2);
+    c.stroke();
+    return true;
+  },
+});
+
+function playCut(script, onDone) {
+  if (!script || !script.length) { if (onDone) onDone(); return; }
+  G.mode = 'cut';
+  ui.pad.classList.add('hidden');
+  ui.start.classList.add('hidden');
+  ui.over.classList.add('hidden');
+  ui.pause.classList.add('hidden');
+  if (ui.cutSkip) ui.cutSkip.classList.remove('hidden');
+  sfx.stopMusic();
+  cut.play(script, () => {
+    if (ui.cutSkip) ui.cutSkip.classList.add('hidden');
+    if (onDone) onDone();
+  });
+}
+
+// 開始／回到實際的關卡操作
+function resumePlay() {
+  G.mode = 'play';
+  ui.pad.classList.remove('hidden');
+  sfx.startMusic();
+}
+
+// 換關：這一關前面有中段劇情就先播
+function advanceStage(n) {
+  const mid = midFor(CHAR.key, n);
+  startStage(n);
+  if (mid) playCut(mid, resumePlay);
+}
+
+const seenKey = (kind) => `kg_${kind}_${CHAR.key}`;
+function hasCleared(key) { return !!localStorage.getItem(`kg_clear_${key}`); }
+
+// 全破：播結局 → 記旗標（解鎖下一位）→ 回標題
+function finishGame() {
+  if (G.mode !== 'play') return;
+  G.best = Math.max(G.best, G.score);
+  localStorage.setItem('kg_best', String(G.best));
+  ui.best.textContent = G.best;
+
+  const script = (scriptFor(CHAR.key, 'end') || []).slice();
+  const next = ROSTER.find((c) => CLEAR_UNLOCK[c.key] === CHAR.key);
+  if (next && !isUnlocked(next)) {
+    script.push({ text: `新角色解鎖：${next.name}（${next.diff}難度）`, black: true, center: true, hold: 200 });
+  }
+  localStorage.setItem(seenKey('clear'), '1');
+  sfx.stopMusic();
+  playCut(script, toTitle);
+}
+
+function toTitle() {
+  G.mode = 'title';
+  G.faint = null;
+  ui.over.classList.add('hidden');
+  ui.pause.classList.add('hidden');
+  ui.pad.classList.add('hidden');
+  ui.start.classList.remove('hidden');
+  buildCharSelect();
 }
 
 // ------------------------------ 畫面流程 ------------------------------
@@ -1491,13 +1583,20 @@ function newGame() {
   player.maxHp = CHAR.maxHp;
   player.hp = player.maxHp;
   player.rage = 0;
-  G.mode = 'play';
-  startStage(1);
   ui.start.classList.add('hidden');
   ui.over.classList.add('hidden');
-  ui.pad.classList.remove('hidden');
   sfx.ensure();
-  sfx.startMusic();
+  startStage(1);
+
+  // 這個角色的開場只自動播一次，之後從標題的「故事」重看
+  const key = seenKey('seen_open');
+  const open = scriptFor(CHAR.key, 'open');
+  if (open && !localStorage.getItem(key)) {
+    localStorage.setItem(key, '1');
+    playCut(open, resumePlay);
+  } else {
+    resumePlay();
+  }
 }
 
 function gameOver() {
@@ -1535,13 +1634,7 @@ stage = makeStage(1);
 
 document.getElementById('startBtn').addEventListener('click', newGame);
 document.getElementById('retryBtn').addEventListener('click', newGame);
-document.getElementById('titleBtn').addEventListener('click', () => {
-  G.mode = 'title';
-  ui.over.classList.add('hidden');
-  ui.start.classList.remove('hidden');
-  ui.pad.classList.add('hidden');
-  buildCharSelect();
-});
+document.getElementById('titleBtn').addEventListener('click', toTitle);
 document.getElementById('resumeBtn').addEventListener('click', togglePause);
 ui.pauseBtn.addEventListener('click', togglePause);
 ui.muteBtn.addEventListener('click', () => {
@@ -1549,6 +1642,15 @@ ui.muteBtn.addEventListener('click', () => {
   ui.muteBtn.textContent = m ? '🔇' : '🔊';
 });
 addEventListener('visibilitychange', () => { if (document.hidden && G.mode === 'play') togglePause(); });
+
+// 過場：點畫面任一處推進（逐字中就先補完），左上角可跳過
+document.getElementById('wrap').addEventListener('pointerdown', () => {
+  if (G.mode === 'cut') cut.tap = true;
+});
+if (ui.cutSkip) {
+  ui.cutSkip.addEventListener('pointerdown', (e) => { e.stopPropagation(); });
+  ui.cutSkip.addEventListener('click', (e) => { e.stopPropagation(); cut.skip(); });
+}
 
 ui.best.textContent = G.best;
 
@@ -1562,7 +1664,23 @@ function pickDefeatArt() {
 }
 
 // ------------------------------ 選角 ------------------------------
-function isUnlocked(c) { return G.bosses >= c.unlockBoss; }
+// 解鎖：破前一位的台（才符合劇情順序）
+const CLEAR_UNLOCK = { mage: 'knight', elder: 'mage' };
+
+// 舊版是掛「累計討伐魔王數」。更新後把當下的魔王數凍結起來當作既得權益，
+// 舊玩家已經解鎖的角色不會被鎖回去；新存檔凍結值是 0，所以只認破台旗標。
+const LEGACY_BOSSES = (() => {
+  const k = 'kg_legacy_bosses';
+  if (localStorage.getItem(k) === null) localStorage.setItem(k, String(G.bosses));
+  return +localStorage.getItem(k) || 0;
+})();
+
+function isUnlocked(c) {
+  if (!c.unlockBoss) return true;
+  const need = CLEAR_UNLOCK[c.key];
+  if (need && hasCleared(need)) return true;
+  return LEGACY_BOSSES >= c.unlockBoss;
+}
 
 function buildCharSelect() {
   const box = document.getElementById('charSelect');
@@ -1581,7 +1699,8 @@ function buildCharSelect() {
       b.classList.add('is-locked');
       const lk = document.createElement('span');
       lk.className = 'clock';
-      lk.innerHTML = '<b>🔒</b>討伐 ' + c.unlockBoss + ' 隻<br>魔王後解鎖';
+      const need = ROSTER.find((r) => r.key === CLEAR_UNLOCK[c.key]);
+      lk.innerHTML = need ? '<b>🔒</b>破完<br>' + need.name + '篇' : '<b>🔒</b>尚未解鎖';
       b.appendChild(lk);
     }
     b.addEventListener('click', () => {
@@ -1602,8 +1721,25 @@ function buildCharSelect() {
       blurb.innerHTML = CHAR.blurb +
         (CHAR.todo ? '<br><span class="todo">※ ' + CHAR.todo + '</span>' : '');
     }
+    buildReplay();
   }
   buildCharSelect.refresh = refreshCharSelect;
+}
+
+// 標題畫面「故事」裡的重看鍵：開場永遠可以重看，結局要破過台才出現
+function buildReplay() {
+  const box = document.getElementById('storyReplay');
+  if (!box) return;
+  box.innerHTML = '';
+  const add = (label, kind) => {
+    const b = document.createElement('button');
+    b.className = 'smallbtn';
+    b.textContent = label;
+    b.addEventListener('click', () => { sfx.ensure(); playCut(scriptFor(CHAR.key, kind), toTitle); });
+    box.appendChild(b);
+  };
+  if (scriptFor(CHAR.key, 'open')) add('重看 ' + CHAR.name + ' 篇開場', 'open');
+  if (hasCleared(CHAR.key) && scriptFor(CHAR.key, 'end')) add('重看 ' + CHAR.name + ' 篇結局', 'end');
 }
 buildCharSelect();
 
@@ -1647,6 +1783,8 @@ function loop(now) {
       else update();
     } else if (G.mode === 'pause') {
       if (input.pressed.pause) togglePause();
+    } else if (G.mode === 'cut') {
+      cut.update(input);
     } else {
       G.frame++;
       if (input.pressed.jump || input.pressed.attack) {
@@ -1655,7 +1793,12 @@ function loop(now) {
     }
     input.endFrame();
   }
-  if (G.mode === 'title' || G.mode === 'dead') {
+  if (G.mode === 'cut') {
+    // 中段對話沒有 CG，就把（暫停中的）關卡畫面當背景，跟洛克人一樣
+    if (cut.needsWorld) render(false);
+    ctx.setTransform(RES, 0, 0, RES, 0, 0);
+    cut.draw(ctx, VW, VH);
+  } else if (G.mode === 'title' || G.mode === 'dead') {
     // 標題／結束畫面：背景 + 待機中的女騎士
     ctx.setTransform(RES, 0, 0, RES, 0, 0);
     ctx.save();
@@ -1711,6 +1854,7 @@ addEventListener('orientationchange', () => setTimeout(resize, 120));
 resize();
 
 // 對外除錯用
-window.__game = { G, player, S, HERO, get shots() { return shots; }, get enemies() { return enemies; }, get stage() { return stage; },
+window.__game = { G, player, S, HERO, cut, playCut, scriptFor, midFor, toTitle, FINAL_STAGE,
+  get shots() { return shots; }, get enemies() { return enemies; }, get stage() { return stage; },
   get VW() { return VW; }, VH, get RES() { return RES; }, GROUND, HERO_H,
   newGame, startStage, cam };

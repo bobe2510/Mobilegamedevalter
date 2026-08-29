@@ -22,6 +22,9 @@
     <button id="pauseBtn" class="sysbtn" aria-label="暫停">⏸</button>
   </div>
 
+  <!-- 過場：跳過 -->
+  <button id="cutSkip" class="cutskip hidden">跳過 ▶▶</button>
+
   <!-- 觸控搖桿 -->
   <div id="pad" class="hidden">
     <div class="padside padleft">
@@ -51,13 +54,15 @@
         <p>放心不下的王宮派出了擅長操控人偶的<b>魔法大臣</b>，把一隻<b>魔法熊貓娃娃</b>交給公主——
            熊貓會依她當下的實力，安排剛剛好的試煉；萬一撐不住了，就用<b>熊貓車</b>把公主平安送回王宮。</p>
         <p class="tiny">（所以你會發現：連續倒下時試煉會變溫和，一路過關則會逐漸嚴苛。那都是熊貓在調整。）</p>
+        <div id="storyReplay" class="replay"></div>
       </details>
       <details class="help">
         <summary>操作說明</summary>
         <p><b>手機</b>：左下移動，右下 斬 / 跳 / 必殺</p>
         <p><b>電腦</b>：←→ 或 A D 移動・空白鍵 跳・J 攻擊・K 必殺・P 暫停</p>
         <p>連續按「斬」可打出三段連擊，氣力集滿放必殺旋風斬。</p>
-        <p>走到終點傳送門過關，每 3 關會有魔王。</p>
+        <p>走到終點傳送門過關，每 3 關會有魔王。<b>第 9 關的魔王</b>打完就是全破，
+           會播結局並解鎖下一位角色。</p>
       </details>
       <p class="best">最高分：<span id="bestScore">0</span></p>
     </div>

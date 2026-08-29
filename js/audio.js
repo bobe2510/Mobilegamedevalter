@@ -76,6 +76,7 @@ export class Sfx {
   honk()    { this.tone(392, 0.13, 'square', 0.30); setTimeout(() => this.tone(294, 0.20, 'square', 0.30), 150); }
   // 哭哭
   sob()     { this.tone(520 + Math.random() * 80, 0.10, 'triangle', 0.14, -120); }
+  blip()    { this.tone(760, 0.03, 'square', 0.07); }   // 對話逐字聲
 
   // 簡短的循環主旋律
   startMusic() {
