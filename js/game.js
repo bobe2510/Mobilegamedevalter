@@ -2,7 +2,7 @@
 // 《劍姬騎行》Knight Girl — 8-bit 橫向捲軸動作遊戲
 // 純 Canvas，無外部素材，手機／桌機通用。
 // ---------------------------------------------------------------------------
-import { buildSprites, PLAYER_FOOT } from './sprites.js';
+import { buildSprites, PLAYER_FOOT, PLAYER_W } from './sprites.js';
 import { Input } from './input.js';
 import { Sfx } from './audio.js';
 
@@ -897,27 +897,27 @@ function drawPlayer() {
   if (player.dead) {
     // 哭哭（坐在地上／被熊貓車載走）
     const key = 'cry' + (Math.floor(G.frame / 14) % 2);
-    drawSprite(S.player[key], player.dir, Math.round(player.x - cam.x - 12), Math.round(player.y - PLAYER_FOOT));
+    drawSprite(S.player[key], player.dir, Math.round(player.x - cam.x - PLAYER_W / 2), Math.round(player.y - PLAYER_FOOT));
     return;
   }
   if (player.inv > 0 && player.spin <= 0 && G.frame % 6 < 2) return;
 
   const key = playerFrame();
-  const sx = Math.round(player.x - cam.x - 12);
+  const sx = Math.round(player.x - cam.x - PLAYER_W / 2);
   const sy = Math.round(player.y - PLAYER_FOOT);
 
   if (player.spin > 0) {
     // 旋風斬：旋轉繪製 + 劍光圈
     ctx.save();
-    ctx.translate(sx + 12, sy + 16);
+    ctx.translate(sx + PLAYER_W / 2, sy + 16);
     ctx.rotate((G.frame * 0.55) % (Math.PI * 2));
     ctx.globalAlpha = 0.9;
-    ctx.drawImage(S.player[key][1], -12, -16);
+    ctx.drawImage(S.player[key][1], -PLAYER_W / 2, -16);
     ctx.restore();
     ctx.strokeStyle = 'rgba(191,233,255,0.85)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(sx + 12, sy + 16, 34 + Math.sin(G.frame * 0.4) * 3, 0, Math.PI * 2);
+    ctx.arc(sx + PLAYER_W / 2, sy + 16, 34 + Math.sin(G.frame * 0.4) * 3, 0, Math.PI * 2);
     ctx.stroke();
     return;
   }
@@ -1188,6 +1188,7 @@ function gameOver() {
   ui.finalScore.textContent = G.score;
   ui.finalStage.textContent = G.stage;
   ui.best.textContent = G.best;
+
   ui.over.classList.remove('hidden');
   ui.pad.classList.add('hidden');
   sfx.stopMusic();
@@ -1219,6 +1220,25 @@ ui.muteBtn.addEventListener('click', () => {
 addEventListener('visibilitychange', () => { if (document.hidden && G.mode === 'play') togglePause(); });
 
 ui.best.textContent = G.best;
+
+// ------------------------ 封面插畫（可選素材） ------------------------
+// assets/ 底下放了圖就自動套用，沒有的話畫面維持純程式繪製的樣子。
+(function setupArtwork() {
+  const cover = document.getElementById('coverArt');
+  const wide = document.getElementById('coverArtWide');
+  const cry = document.getElementById('cryArt');
+  // 圖片可能在這支 module 執行前就載完了，所以要先檢查 complete
+  const mark = (el, screen, cls) => {
+    if (!el) return;
+    const ok = () => { if (el.naturalWidth) screen.classList.add(cls); };
+    const fail = () => el.remove();
+    if (el.complete) { if (el.naturalWidth) ok(); else fail(); }
+    else { el.addEventListener('load', ok); el.addEventListener('error', fail); }
+  };
+  mark(cover, ui.start, 'has-art');
+  mark(wide, ui.start, 'has-wide');
+  mark(cry, ui.over, 'has-portrait');
+})();
 
 // ------------------------------ 主迴圈 ------------------------------
 let last = performance.now(), acc = 0;
@@ -1254,7 +1274,7 @@ function loop(now) {
     drawGround();
     const k = 3;
     const idle = S.player['idle' + (Math.floor(G.frame / 34) % 2)][1];
-    ctx.drawImage(idle, Math.round(VW * 0.16), GROUND - 26 * k, 24 * k, 28 * k);
+    ctx.drawImage(idle, Math.round(VW * 0.14), GROUND - 26 * k, PLAYER_W * k, 28 * k);
     const hop = Math.abs(Math.sin(G.frame / 26)) * 14;
     const sl = S.slime[0]['-1'];
     ctx.drawImage(sl, Math.round(VW * 0.78), Math.round(GROUND - 10 * 2 - hop), 12 * 2, 10 * 2);

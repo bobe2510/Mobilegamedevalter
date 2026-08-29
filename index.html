@@ -37,16 +37,19 @@
 
   <!-- 標題畫面 -->
   <div id="startScreen" class="screen">
+    <img id="coverArt" class="cover" src="assets/cover.png" alt="">
+    <img id="coverArtWide" class="cover cover-wide" src="assets/cover-wide.png" alt="">
     <div class="panel">
       <h1>劍<span>姬</span>騎行</h1>
       <p class="sub">KNIGHT GIRL — 8BIT SIDE SCROLLER</p>
       <button id="startBtn" class="bigbtn">開始遊戲</button>
-      <div class="help">
+      <details class="help">
+        <summary>操作說明</summary>
         <p><b>手機</b>：左下移動，右下 斬 / 跳 / 必殺</p>
         <p><b>電腦</b>：←→ 或 A D 移動・空白鍵 跳・J 攻擊・K 必殺・P 暫停</p>
         <p>連續按「斬」可打出三段連擊，氣力集滿放必殺旋風斬。</p>
         <p>走到終點傳送門過關，每 3 關會有魔王。</p>
-      </div>
+      </details>
       <p class="best">最高分：<span id="bestScore">0</span></p>
     </div>
   </div>
@@ -54,6 +57,7 @@
   <!-- 死亡畫面 -->
   <div id="overScreen" class="screen hidden">
     <div class="panel">
+      <img id="cryArt" class="cryart" src="assets/cry.png" alt="">
       <h2>嗚…被熊貓車送走了</h2>
       <p class="carted">🐼🛒 熊貓司機把你載回營地了</p>
       <p class="score">分數 <b id="finalScore">0</b>　／　抵達 STAGE <b id="finalStage">1</b></p>
