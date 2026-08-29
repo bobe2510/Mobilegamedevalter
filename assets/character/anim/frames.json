@@ -1,0 +1,17 @@
+{
+  "frames": [
+    "idle",
+    "walk1",
+    "walk2",
+    "jump",
+    "atk_up",
+    "atk_thrust"
+  ],
+  "frame_w": 270,
+  "frame_h": 315,
+  "anchor": {
+    "foot_x": 120,
+    "foot_y": 312
+  },
+  "note": "anchor 是角色腳底與頭部中心在畫格內的座標，用來對位"
+}
