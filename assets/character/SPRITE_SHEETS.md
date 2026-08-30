@@ -52,22 +52,44 @@ Grok 的輸出固定是 **1168 × 784**，這是天花板。實測目前四張�
 差異要先定下來。我的建議是**以遊戲 sprite 為準**（玩家看最久的是它，
 而且只要重產一張封面就好，不用重拍四張動作圖）：
 
-| 角色 | 部位 | 立繪 | 遊戲 sprite | 建議 |
+| 角色 | 部位 | 立繪 | 原本的 sprite | 定案 |
 |---|---|---|---|---|
-| 小公主 | **披風** | **白色**（金藤蔓紋） | **紅色**（金邊） | ✅ **紅色** |
+| 小公主 | **披風** | **白色**（金藤蔓紋） | 紅色 | ✅ **白色（冷銀白）**，sprite 已改 |
+| 小公主 | 髮飾緞帶 | 紅 | 紅 | ✅ **維持紅**（跟姐姐的家族共通點） |
 | 小公主 | 上衣 | 白色長袖洋裝甲 | 白金胸甲、短袖 | ✅ sprite |
 | 大臣 | **滾邊** | 銀白色 | **金色** | ✅ **金色** |
 | 大臣 | 法杖杖身 | 銀色金屬 | **木頭** | ✅ **木頭** |
 | 大臣 | **小熊貓子機** | **有**（藍緞帶綁在法杖上） | **沒有** | ✅ **要加**（劇情要用） |
-| 長公主 | — | 白金全身甲 / 紅披風 / 紅瞳 / 大劍 | 一致 | ✅ 不用改 |
+| 長公主 | — | 白金全身甲 / **紅**披風 / 紅瞳 / 大劍 | 一致 | ✅ 不用改 |
 
-> **小公主的披風顏色是唯一真的要你決定的一項。**
-> 我選紅色還有一個劇情理由：開場 CG 第 1 張的背影反轉，靠的就是兩姊妹都穿紅披風；
-> 如果妹妹是白披風，那個反轉一眼就被拆穿了。
-> 但如果你想反過來——用顏色差當第二個線索——那就改白色，下面設定裡的 `RED cape` 換成 `WHITE cape` 就好。
+### 為什麼小公主是白披風
 
-其餘的差異我會在圖進來之後，統一改 `assets/PROMPTS.md` 的角色設定段，
-之後所有 CG 都從那一份長出來。
+**紅披風是長公主的特徵。** 開場 CG 第 1 張裡那個背影穿紅披風——
+第一輪玩家會讀成「她想像中的理想騎士」，不會起疑（理想騎士當然不用穿她現在的衣服）；
+第二輪才發現那是姐姐。線索看得見、但第一次無害，這才是好的伏筆。
+大劍是第二個線索，兩個疊起來。
+
+### ⚠️ 但「白」不能是純白 —— 這個實測過
+
+純白披風配白金鎧甲，在遊戲的 70 px 尺寸下會糊成一團。我把現有 sprite 改色實測：
+
+| 版本 | 披風 vs 鎧甲 ΔE | 整體 vs 天空 ΔE | 判定 |
+|---|---|---|---|
+| 原本的紅 | **80.0** | 72.1 | 辨識最強，但劇情上是姐姐的顏色 |
+| A 純白 | **17.6** | 60.5 | ❌ 低於 20 就會被讀成「同一塊材質」，披風等於消失 |
+| **B 冷銀白** | **30.2** | 59.5 | ✅ **採用**——看起來還是白的，但跟鎧甲分得開 |
+| C 淡藍灰 | 43.2 | 58.9 | 分得最開，但開始讀成「藍披風」，撞到大臣的色 |
+
+所以定案是 **B：冷銀白（偏冷、偏灰的白），不是純白**。
+現有的 sprite、轉身圖、結算插畫我已經照 B 改好了，用的是
+[`tools/recolor_cape.py`](../../tools/recolor_cape.py)（它會自動避開紅緞帶）。
+這是**過渡處理**——之後重拍的動作圖會直接畫成白的，就不需要改色了。
+
+> ⭕ 可選的加碼：**披風內裡做成紅色**。跑動和攻擊時披風翻起來會閃到紅，
+> 動態辨識更好，而且是「她其實已經帶著姐姐的顏色，只是自己不知道」的暗喻。
+> 但這會多一個變數，第一版我建議先不要——上面的數字顯示不加也夠用。
+
+封面 `cover.jpg` / `cover-wide.jpg` 本來就是白披風，所以**不用重產**。
 
 ---
 
@@ -85,15 +107,17 @@ JRPG character sprite. Crisp pixels, no anti-aliased blur, no painterly renderin
 
 ```
 Character: a young princess-knight girl, cheerful and a bit reckless.
-- Hair: golden-blonde, HIGH PONYTAIL tied with a RED ribbon, short fringe,
-  two short side locks
+- Hair: golden-blonde, HIGH PONYTAIL tied with a RED ribbon (the red ribbon
+  is important — keep it red), short fringe, two short side locks
 - Eyes: large BLUE eyes
 - Head: small GOLD tiara with a BLUE gem
 - Body: WHITE dress-armor with GOLD trim — white breastplate with a blue gem
   at the collar, white puffed shoulder pieces, white gloves, gold belt,
   short white layered skirt with a gold hem
 - Legs: WHITE thigh-high stockings, WHITE-and-GOLD armored boots
-- Cape: RED cape with a gold edge, hanging from both shoulders
+- Cape: WHITE cape hanging from both shoulders — a COOL SILVER-WHITE,
+  clearly cooler and greyer than the warm white of her armor so the two
+  never blend together. NOT pure white. Gold edge trim.
 - Weapon: a straight one-handed longsword — pale blue steel blade,
   GOLD cross-guard, blue grip
 ```
@@ -153,7 +177,7 @@ TECHNICAL REQUIREMENTS — follow these exactly:
   no slash effects — effects are added by the game engine.
 ```
 
-> ⚠️ 最後一條對**長公主**特別重要：她現在的攻擊格自帶金色斬擊光弧，
+> ⚠️ 「不要特效」那條對**長公主**特別重要：她現在的攻擊格自帶金色斬擊光弧，
 > 那個會跟程式的劍光打架、而且沒辦法獨立調時間。這批請畫**乾淨的**，
 > 我會把程式的劍光特效開回來。
 

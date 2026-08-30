@@ -43,8 +43,9 @@ eyelashes, light blush, fair skin, gentle dignified expression.
 She wears an elegant WHITE dress-armor with rich GOLD filigree trim: a white
 breastplate with a blue gem at the collar, white gloves, a gold-and-blue jeweled
 belt, a short white layered skirt with gold embroidery, white thigh-high stockings
-and white-and-gold armored boots. A flowing RED cape with a gold edge hangs
-from her shoulders.
+and white-and-gold armored boots. A flowing WHITE cape with a gold edge hangs
+from her shoulders — a cool silver-white, clearly cooler than the warm white
+of her armor, never pure white.
 
 She carries a European longsword with a deep-blue grip, an ornate gold cross-guard
 and a blue jewel set in the guard.
@@ -67,7 +68,7 @@ with iron-rimmed wheels.
 
 Full-body heroic key visual: she stands proudly on a grassy hilltop at sunrise,
 her longsword planted point-down into the ground with both hands resting on the
-pommel, crimson cape billowing in the wind, chin slightly raised with a calm,
+pommel, white cape billowing in the wind, chin slightly raised with a calm,
 dignified, confident expression. Behind her, a fantasy landscape of distant blue
 mountains and a white castle, dramatic golden rim lighting, cinematic light rays,
 floating glowing particles.
@@ -89,7 +90,7 @@ No text, no letters, no logo, no watermark, no signature, no border frame.
 [如果 Grok 支援參考圖，把 cover.png 一起附上並加一句：same character as the attached image]
 
 Full-body heroic key visual, horizontal composition: she stands on the RIGHT
-third of the frame, resting her longsword on her shoulder, crimson cape sweeping
+third of the frame, resting her longsword on her shoulder, white cape sweeping
 to the side, looking toward the camera with a confident smile. The LEFT half of
 the image is an open fantasy landscape — sunrise sky, distant mountains, a
 castle silhouette — kept simple and uncluttered.
@@ -132,16 +133,19 @@ No text, no letters, no logo, no watermark, no signature.
 
 ---
 
-## ⚠️ 目前的封面與遊戲 sprite 不一致
+## 披風顏色定案：小公主白、長公主紅
 
-`cover.jpg` / `cover-wide.jpg` 裡小公主的披風是**白色**，遊戲裡的 sprite 是**紅色**。
-定案是**以 sprite 為準（紅色）**——上面的角色設定已經改好了，
-兩張封面之後要用新設定重產一次。
+**紅披風是長公主的專屬特徵**，開場 CG 第 1 張的背影反轉就靠這個。
+封面本來就畫成白色，所以封面不用動；反而是**遊戲 sprite 原本是紅的，已經改成冷銀白**
+（動作圖、轉身圖、結算插畫都改好了）。
 
-理由：紅披風是開場 CG 第 1 張那個「背影反轉」的關鍵（兩姊妹都穿紅披風，
-玩家才會誤認）；而且重產一張封面比重拍四張動作圖便宜太多。
+⚠️ 白披風不能用純白——配上白金鎧甲會糊成一團（實測 ΔE 只有 17.6）。
+要用**冷銀白**：偏冷、偏灰，跟鎧甲的暖白分得開。上面的角色設定段已經寫進去了。
 
-其餘的服裝差異對照見 [`character/SPRITE_SHEETS.md`](character/SPRITE_SHEETS.md) 第三節。
+紅緞帶維持紅色，那是兩姊妹的家族共通點。
+
+完整的實測數字與其餘服裝差異對照，見
+[`character/SPRITE_SHEETS.md`](character/SPRITE_SHEETS.md) 第三節。
 
 ---
 
