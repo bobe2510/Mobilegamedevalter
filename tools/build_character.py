@@ -69,8 +69,16 @@ def build(sources, dst, ref_frame, target_h=None):
     target = target_h or ref_h
     print("\n統一縮放到站姿身高 %d px：" % target)
 
+    # 底線開頭的是「基準格」：每張綠幕圖都重畫同一個站姿，用來對齊各批次的縮放。
+    # 對齊完就丟掉，不會進最終的 sheet。
+    dropped = [f["name"] for f in all_figs if f["name"].startswith("_")]
+    if dropped:
+        print("  （基準格 %s 只用來對齊縮放，不寫進 sheet）" % "、".join(dropped))
+
     prepared = []
     for f in all_figs:
+        if f["name"].startswith("_"):
+            continue
         s = (target / ref_h) * (ref_h / f["_base"])          # 先對齊各批次，再縮到目標
         im = f["img"]
         nw, nh = max(1, round(im.width * s)), max(1, round(im.height * s))
@@ -134,6 +142,18 @@ CHARACTERS = {
              ["fall", "hurt", "sit_cry", "victory"], ("fall", "hurt"), "victory"),
         ],
     ),
+}
+
+# 下一批動作圖的格名（規格見 assets/character/SPRITE_SHEETS.md）。
+# 圖進來之後把檔名填進 CHARACTERS 的 sources 就好；`_ref` 是每張的基準站姿，
+# 只用來對齊各批次的縮放，不會寫進最終 sheet。
+NEXT_SHEETS = {
+    "A": (["idle", "run1", "run2", "run3", "run4"], ("run2", "run4")),
+    "B": (["_ref", "jump", "apex", "fall", "land"], ("_ref", "jump", "apex", "fall")),
+    "C": (["_ref", "atk1_wind", "atk1_hit", "atk2_hit"], ("_ref",)),
+    "D": (["_ref", "atk3_hit", "special1", "special2"], ("_ref",)),
+    # 魔法大臣專屬：拿小熊貓子機聯絡失聯的熊貓
+    "E": (["_ref", "call1", "call2", "call3", "call4"], ("_ref",)),
 }
 
 if __name__ == "__main__":

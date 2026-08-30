@@ -132,6 +132,17 @@
 **塔納托斯**（千年覺醒一次的封印邪物）。設定、招式與平衡評估見
 [`assets/story/bosses.md`](assets/story/bosses.md)。
 
+## 動作圖
+
+三人的動作格目前各 10 格（`idle` / `walk1` / `walk2` / `jump` / `fall` /
+`atk_up` / `atk_thrust` / `hurt` / `sit_cry` / `victory`），跑步只有兩格互換，
+攻擊只有兩格。要補到會動的程度，需要再產 13 張綠幕圖——
+格數上限、姿勢清單、可直接貼的 Grok prompt 與服裝定案見
+[`assets/character/SPRITE_SHEETS.md`](assets/character/SPRITE_SHEETS.md)。
+
+魔法大臣另外有一個專屬動作：**拿綁在法杖上的小熊貓子機，像拿手機一樣
+試圖聯絡失聯的熊貓**（劇情上塔納托斯覺醒那天早上魔力流混亂，遠端連線斷了）。
+
 ## 過場（✅ 已實作）
 
 開場與結局用**全畫面 CG 靜畫**，中間劇情用**洛克人式的對話**（頭像 + 文字框，

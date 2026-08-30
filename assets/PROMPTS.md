@@ -1,7 +1,11 @@
 # 插畫素材規格與 Grok Prompt
 
-遊戲內的角色維持 8-bit 點陣（程式產生），這裡的插畫只用在**封面／結算畫面**。
-把圖丟進這個 `assets/` 資料夾、檔名對上，遊戲就會自動套用；沒有檔案時畫面會退回純程式繪製的版本，不會壞掉。
+這份管的是**封面與結算畫面的插畫**。另外兩份規格分開放：
+
+- **遊戲內的動作圖**（綠幕、一張多格）→ [`character/SPRITE_SHEETS.md`](character/SPRITE_SHEETS.md)
+- **過場 CG**（開場／結局）→ [`story/cutscenes.md`](story/cutscenes.md)
+
+把圖丟進 `assets/`、檔名對上，遊戲就會自動套用；沒有檔案時會退回純程式繪製的版本，不會壞掉。
 
 ## 需要的檔案
 
@@ -39,8 +43,8 @@ eyelashes, light blush, fair skin, gentle dignified expression.
 She wears an elegant WHITE dress-armor with rich GOLD filigree trim: a white
 breastplate with a blue gem at the collar, white gloves, a gold-and-blue jeweled
 belt, a short white layered skirt with gold embroidery, white thigh-high stockings
-and white-and-gold armored boots. A flowing WHITE cape lined with gold vine
-patterns hangs from her shoulders.
+and white-and-gold armored boots. A flowing RED cape with a gold edge hangs
+from her shoulders.
 
 She carries a European longsword with a deep-blue grip, an ornate gold cross-guard
 and a blue jewel set in the guard.
@@ -125,6 +129,19 @@ grass with warm bokeh).
 
 No text, no letters, no logo, no watermark, no signature.
 ```
+
+---
+
+## ⚠️ 目前的封面與遊戲 sprite 不一致
+
+`cover.jpg` / `cover-wide.jpg` 裡小公主的披風是**白色**，遊戲裡的 sprite 是**紅色**。
+定案是**以 sprite 為準（紅色）**——上面的角色設定已經改好了，
+兩張封面之後要用新設定重產一次。
+
+理由：紅披風是開場 CG 第 1 張那個「背影反轉」的關鍵（兩姊妹都穿紅披風，
+玩家才會誤認）；而且重產一張封面比重拍四張動作圖便宜太多。
+
+其餘的服裝差異對照見 [`character/SPRITE_SHEETS.md`](character/SPRITE_SHEETS.md) 第三節。
 
 ---
 

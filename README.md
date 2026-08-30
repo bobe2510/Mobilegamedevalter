@@ -125,6 +125,9 @@ js/story.js     所有台詞與過場的分鏡資料
   繪圖座標維持虛擬解析度，所以改解析度不用重調物理。
 - **換插畫**：把圖丟進 `assets/`（檔名見 [`assets/README.md`](assets/README.md)），
   生成用的角色設定與 prompt 在 [`assets/PROMPTS.md`](assets/PROMPTS.md)。
+- **補角色動作**：綠幕圖規格與姿勢清單見
+  [`assets/character/SPRITE_SHEETS.md`](assets/character/SPRITE_SHEETS.md)，
+  產好用 `python3 tools/build_character.py <角色>` 合併。
 - **改劇情台詞**：`js/story.js`，一句就是一筆 `{ cg, who, text }`。
 - **補過場 CG**：丟進 `assets/story/cg/<角色>/`，檔名與分鏡見
   [`assets/story/cutscenes.md`](assets/story/cutscenes.md)。缺圖時遊戲會顯示
