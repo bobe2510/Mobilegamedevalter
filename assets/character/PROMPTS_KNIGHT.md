@@ -31,9 +31,14 @@
 ### 風格段
 
 ```
-Chibi pixel-art game sprite, 2.5-heads-tall proportions, clean thick outlines,
-rich shading with a limited palette — the look of a high-resolution SNES/PS1
-JRPG character sprite. Crisp pixels, no anti-aliased blur, no painterly rendering.
+Chibi pixel-art game sprite. PROPORTIONS ARE CRITICAL: the character is
+EXACTLY 2 HEADS TALL — her head, measured from the top of the hair to the
+chin, is 50% of her total standing height. This ratio must be IDENTICAL in
+every pose and identical to the attached reference image. Do not make her
+slimmer, taller or more realistic in the action poses.
+Clean thick outlines, rich shading with a limited palette — the look of a
+high-resolution SNES/PS1 JRPG character sprite. Crisp pixels, no anti-aliased
+blur, no painterly rendering.
 Same character, same outfit, same colors and the same scale as the attached
 reference image.
 ```

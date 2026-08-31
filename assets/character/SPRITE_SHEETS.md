@@ -106,9 +106,14 @@ Grok 的輸出固定是 **1168 × 784**，這是天花板。實測目前四張�
 ### 共用風格段（三個角色都要貼）
 
 ```
-Chibi pixel-art game sprite, 2.5-heads-tall proportions, clean thick outlines,
-rich shading with a limited palette — the look of a high-resolution SNES/PS1
-JRPG character sprite. Crisp pixels, no anti-aliased blur, no painterly rendering.
+Chibi pixel-art game sprite. PROPORTIONS ARE CRITICAL: the character is
+EXACTLY 2 HEADS TALL — her head, measured from the top of the hair to the
+chin, is 50% of her total standing height. This ratio must be IDENTICAL in
+every pose and identical to the attached reference image. Do not make her
+slimmer, taller or more realistic in the action poses.
+Clean thick outlines, rich shading with a limited palette — the look of a
+high-resolution SNES/PS1 JRPG character sprite. Crisp pixels, no anti-aliased
+blur, no painterly rendering.
 ```
 
 ### 小公主 · Little Princess
@@ -267,7 +272,25 @@ TECHNICAL REQUIREMENTS — follow these exactly:
 4. 大臣的子機動作接成一個可以在對話裡播的小演出
 5. 依這批圖更新 `assets/PROMPTS.md` 的角色設定，之後 21 張 CG 都從那份長出來
 
-## 八、萬一產壞了
+## 八、收到圖先跑檢查
+
+```bash
+python3 tools/check_sheet.py <綠幕圖> <姿勢數>          # 只檢查
+python3 tools/check_sheet.py <綠幕圖> <姿勢數> --fix out.png   # 順便對齊頭高
+```
+
+會印出每個姿勢的身高、頭高、**頭身比**與**姿勢間隙**。兩個要看的數字：
+
+- **頭身比變異**：< 8% 可以用；> 18% 建議重產。目標是 **2.0 頭身**
+  （頭頂到下巴 = 站姿總高的 50%），這是現有 sprite 實測出來的值，四個視角都一樣
+- **姿勢間隙**：小於 25 px 就有黏在一起的風險，出現負數代表已經重疊了
+
+身高變異大是正常的（攻擊姿勢本來就會比站姿高或矮），不用管。
+
+`--fix` 會把每個姿勢縮放到頭高一致——頭是眼睛最會盯的地方，頭一跳就很明顯，
+腿長差幾 px 反而看不出來。飄得不多的時候用這個救就好，不用重產。
+
+## 九、萬一產壞了
 
 | 症狀 | 怎麼辦 |
 |---|---|
