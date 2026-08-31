@@ -1555,6 +1555,8 @@ const FACE = { knight: 1, mage: 1, elder: 1 };
 const BUSTS = {
   mage: ['normal', 'worried', 'relieved', 'scold', 'speechless',
          'sly', 'serious', 'flustered', 'soft'],
+  elder: ['normal', 'cold', 'fury', 'tearful', 'scold',
+          'blush', 'soft', 'exhausted', 'smug'],
 };
 
 function bustOf(who, expr) {

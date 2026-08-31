@@ -150,6 +150,17 @@ CHARACTERS = {
              ("_old_fall", "hurt"), "victory"),
         ],
     ),
+    # 長公主 v2：四張新動作圖 + 上一批的 hurt / sit_cry / victory
+    "elder_v2": dict(
+        dst="assets/character/elder/anim",
+        ref="idle",
+        target_h=245,
+        raw=("elder", "ABCD"),
+        extra_sources=[
+            ("1f913f97-image.jpg", ["_old_fall", "hurt", "sit_cry", "victory"],
+             ("_old_fall", "hurt"), "victory"),
+        ],
+    ),
     # 小公主：白金鎧的劍士
     "knight": dict(
         dst="assets/character/knight/anim",

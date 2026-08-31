@@ -201,7 +201,10 @@ TECHNICAL REQUIREMENTS — follow these exactly:
 
 **可直接複製的完整版本：**
 [`PROMPTS_KNIGHT.md`](PROMPTS_KNIGHT.md)（✅ 已完成，頭身比變異 0%）／
-[`PROMPTS_MAGE.md`](PROMPTS_MAGE.md)（五張，多一張熊貓子機）
+[`PROMPTS_MAGE.md`](PROMPTS_MAGE.md)（五張，多一張熊貓子機）／
+[`PROMPTS_ELDER.md`](PROMPTS_ELDER.md)（四張 + 表情 + 立繪）
+
+三個角色實測的頭身比都是 **2.00～2.02**，所以比例那段三人共用、不用改。
 
 ### A · 跑步循環（5 格）
 

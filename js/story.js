@@ -87,14 +87,14 @@ const MAGE_END = [
 const ELDER_OPEN = [
   // 回收小公主開場第一張的構圖：同樣的姿勢，這次看得到臉——紅瞳
   n('妳說，妳看過一個背影。', { cg: CG('elder', 'open-1') }),
-  say('elder', '那是我。'),
+  say('elder', '那是我。', { expr: 'normal' }),
 
-  say('elder', '……所以，兩個都沒回來。', { cg: CG('elder', 'open-2') }),
-  say('elder', '而你們，是現在才來告訴我的。'),
+  say('elder', '……所以，兩個都沒回來。', { cg: CG('elder', 'open-2'), expr: 'cold' }),
+  say('elder', '而你們，是現在才來告訴我的。', { expr: 'cold' }),
   n('那天王宮裡，沒有人敢抬頭。'),
 
-  say('elder', '不用準備部隊。', { cg: CG('elder', 'open-3') }),
-  say('elder', '我一個人比較快。'),
+  say('elder', '不用準備部隊。', { cg: CG('elder', 'open-3'), expr: 'normal' }),
+  say('elder', '我一個人比較快。', { expr: 'smug' }),
 ];
 
 // 大結局〈兩個笨蛋〉—— 分鏡見 assets/story/ending.md
@@ -110,14 +110,15 @@ const ELDER_END = [
   say('mage', '隊長姐姐我不是說你', { expr: 'sly' }),
   say('knight', '姐、姐姐大人，怎麼會在這裡'),
   n('兩個讓她擔心得要命的人，都平安無事。她的眼眶熱了一下——'),
+  say('elder', '……', { expr: 'tearful' }),
 
   n('……隨即，一人一記暴栗。', { cg: CG('elder', 'end-3') }),
-  say('elder', '兩個笨蛋'),
+  say('elder', '兩個笨蛋', { expr: 'scold' }),
   n('兩人痛得蹲了下來。'),
 
   n('這時旁邊的草叢又鑽出熊貓娃娃，歪著頭，好奇地看著她。', { cg: CG('elder', 'end-4') }),
   n('長公主看著這隻娃娃……臉一紅。隨即板起臉：'),
-  say('elder', '作為懲罰，這個沒收一個月'),
+  say('elder', '作為懲罰，這個沒收一個月', { expr: 'blush' }),
 
   card('回城之後，這次事件的所有參與人——包含小公主與魔法大臣本人——都被長公主狠狠地懲罰了一頓。', 220),
   card('—— 一個月後 ——', 130),
@@ -155,8 +156,8 @@ const MID = {
   elder: {
     3: [
       n('千年才醒一次的東西，這次醒得不是時候。'),
-      say('elder', '讓開。'),
-      say('elder', '我妹妹在後面。'),
+      say('elder', '讓開。', { expr: 'fury' }),
+      say('elder', '我妹妹在後面。', { expr: 'fury' }),
     ],
   },
 };

@@ -27,6 +27,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 每張圖由左到右的表情名稱；底線開頭 = 只用來對齊，不輸出
 BUSTS = {
+    "elder": [
+        ("bust-a", ["normal", "cold", "fury", "tearful", "scold"]),
+        ("bust-b", ["_ref", "blush", "soft", "exhausted", "smug"]),
+    ],
     "mage": [
         ("bust-a", ["normal", "worried", "relieved", "scold", "speechless"]),
         ("bust-b", ["_ref", "sly", "serious", "flustered", "soft"]),
