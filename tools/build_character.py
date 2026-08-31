@@ -138,6 +138,18 @@ CHARACTERS = {
              ("_old_fall", "hurt"), "victory"),
         ],
     ),
+    # 魔法大臣 v2：五張新動作圖（跑步 / 空中 / 揮杖 / 大招 / 熊貓子機）
+    # + 上一批的 hurt / sit_cry / victory
+    "mage_v2": dict(
+        dst="assets/character/mage/anim",
+        ref="idle",
+        target_h=230,
+        raw=("mage", "ABCDE"),
+        extra_sources=[
+            ("bc36a5f7-image.jpg", ["_old_fall", "hurt", "sit_cry", "victory"],
+             ("_old_fall", "hurt"), "victory"),
+        ],
+    ),
     # 小公主：白金鎧的劍士
     "knight": dict(
         dst="assets/character/knight/anim",

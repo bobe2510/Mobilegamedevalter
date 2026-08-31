@@ -198,7 +198,10 @@ TECHNICAL REQUIREMENTS — follow these exactly:
 ## 六、要產的圖：一人 4 張，共 13 張
 
 順序建議：小公主 A→B→C→D，再大臣，再長公主。每張都附上參考圖。
-**小公主的完整可複製版本見 [`PROMPTS_KNIGHT.md`](PROMPTS_KNIGHT.md)。**
+
+**可直接複製的完整版本：**
+[`PROMPTS_KNIGHT.md`](PROMPTS_KNIGHT.md)（✅ 已完成，頭身比變異 0%）／
+[`PROMPTS_MAGE.md`](PROMPTS_MAGE.md)（五張，多一張熊貓子機）
 
 ### A · 跑步循環（5 格）
 
