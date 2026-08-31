@@ -1,21 +1,29 @@
 {
   "frames": [
     "idle",
-    "walk1",
-    "walk2",
+    "run1",
+    "run2",
+    "run3",
+    "run4",
     "jump",
-    "atk_up",
-    "atk_thrust",
+    "apex",
     "fall",
+    "land",
+    "atk1_wind",
+    "atk1_hit",
+    "atk2_hit",
+    "atk3_hit",
+    "special1",
+    "special2",
     "hurt",
     "sit_cry",
     "victory"
   ],
-  "frame_w": 358,
-  "frame_h": 322,
+  "frame_w": 332,
+  "frame_h": 339,
   "anchor": {
-    "x": 179,
-    "y": 317
+    "x": 166,
+    "y": 325
   },
   "stand_h": 251,
   "note": "anchor 是角色的頭部中心 x 與地平線 y；空中姿勢以頭頂對齊，其餘以地平線對齊"

@@ -16,6 +16,22 @@ from greenscreen_sheet import key_out, label_blobs, merge_orphans, to_masks, spl
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # repo 根目錄
 
 
+def head_center_x(rgb, solid, top, H):
+    """頭部中心 x。用膚色找臉——舉劍過頭的姿勢如果只看最上面幾列，
+    量到的會是劍而不是頭，整格就會歪掉。"""
+    r, g, b = [rgb[..., i].astype(int) for i in range(3)]
+    skin = solid & (r > 195) & (g > 150) & (b > 120) & (r > b + 20) & ((r - g) < 75)
+    band = skin[top:top + int(H * 0.55)]
+    ys, xs = np.where(band)
+    if len(xs) >= 40:
+        sel = ys <= ys.min() + H * 0.25          # 只取最上面那一團 = 臉
+        return float(xs[sel].mean())
+    # 看不到臉（背影之類的）就退回「頭部區域的水平中點」
+    hb = solid[top:top + max(30, int(H * 0.28))]
+    hx = np.where(hb.any(axis=0))[0]
+    return float((hx.min() + hx.max()) / 2)
+
+
 def figures(path, names, air, ref):
     """回傳每個姿勢的圖與量測資料。"""
     rgb, alpha = key_out(path)
@@ -40,12 +56,10 @@ def figures(path, names, air, ref):
         rowW = solid.sum(axis=1)
         body = np.where(rowW > 14)[0]
         top, bot = int(body.min()), int(body.max())
-        hb = solid[top:top + 70]
-        hx = np.where(hb.any(axis=0))[0]
         img = Image.fromarray(np.dstack([rgb, np.where(m, alpha, 0) * 255]).astype(np.uint8), "RGBA")
         bb = img.getbbox()
         out.append(dict(name=nm, img=img.crop(bb), bx=bb[0], by=bb[1],
-                        head_cx=(hx.min() + hx.max()) / 2, top=top,
+                        head_cx=head_center_x(rgb, solid, top, bot - top + 1), top=top,
                         body_h=bot - top + 1,
                         anchor_y=(top + std_h) if nm in air else ground,
                         px=int(m.sum())))
@@ -115,6 +129,9 @@ CHARACTERS = {
     "knight_v2": dict(
         dst="assets/character/knight/anim",
         ref="idle",
+        # 遊戲裡角色只有 70 虛擬 px 高，最高 3 倍解析度 = 210 實際 px，
+        # 所以站姿縮到 251 px 就夠用了（上一版也是這個值），檔案才不會爆掉
+        target_h=251,
         raw=("knight", "ABCD"),
         extra_sources=[
             ("1ad07008-image.jpg", ["_old_fall", "hurt", "sit_cry", "victory"],
