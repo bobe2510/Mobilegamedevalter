@@ -272,6 +272,25 @@ TECHNICAL REQUIREMENTS — follow these exactly:
 4. 大臣的子機動作接成一個可以在對話裡播的小演出
 5. 依這批圖更新 `assets/PROMPTS.md` 的角色設定，之後 21 張 CG 都從那份長出來
 
+## 七之二、圖要怎麼給我
+
+⚠️ **貼在對話裡的圖，在遠端 session 不一定進得了檔案系統**（實測過會失敗），
+而且 **GitHub issue 的附件抓不到**——代理只允許 repo 範圍內的路徑，
+`github.com/user-attachments/...` 會回 403。
+
+可行的做法是**把圖 commit 進 repo**：
+
+```
+https://github.com/bobe2510/Mobilegamedevalter/upload/<分支>/assets/character/<角色>/raw
+```
+
+檔名開頭用 **A / B / C / D**（大臣多一張 E）分辨是哪一張，副檔名不拘。
+放好之後一行指令就能合併：
+
+```bash
+python3 tools/build_character.py knight_v2
+```
+
 ## 八、收到圖先跑檢查
 
 ```bash

@@ -109,6 +109,18 @@ def build(sources, dst, ref_frame, target_h=None):
 
 
 CHARACTERS = {
+    # 小公主 v2：新的四張動作圖（跑步 / 空中 / 連擊 / 大招）+ 上一批的
+    # hurt / sit_cry / victory。合併完要跑 tools/recolor_cape.py 把舊那三格的
+    # 紅披風改成白的（新圖本來就是白披風，不會被動到）。
+    "knight_v2": dict(
+        dst="assets/character/knight/anim",
+        ref="idle",
+        raw=("knight", "ABCD"),
+        extra_sources=[
+            ("1ad07008-image.jpg", ["_old_fall", "hurt", "sit_cry", "victory"],
+             ("_old_fall", "hurt"), "victory"),
+        ],
+    ),
     # 小公主：白金鎧的劍士
     "knight": dict(
         dst="assets/character/knight/anim",
@@ -144,26 +156,50 @@ CHARACTERS = {
     ),
 }
 
-# 下一批動作圖的格名（規格見 assets/character/SPRITE_SHEETS.md）。
-# 圖進來之後把檔名填進 CHARACTERS 的 sources 就好；`_ref` 是每張的基準站姿，
-# 只用來對齊各批次的縮放，不會寫進最終 sheet。
+# 新一批動作圖的格名（規格見 assets/character/SPRITE_SHEETS.md）。
+# `_ref` 是每張都重畫的基準站姿，只用來對齊各批次的縮放，不寫進最終 sheet。
+# air = 這張圖裡雙腳離地的姿勢，對齊時要用「虛擬地面」而不是實際腳線。
 NEXT_SHEETS = {
     "A": (["idle", "run1", "run2", "run3", "run4"], ("run2", "run4")),
-    "B": (["_ref", "jump", "apex", "fall", "land"], ("_ref", "jump", "apex", "fall")),
-    "C": (["_ref", "atk1_wind", "atk1_hit", "atk2_hit"], ("_ref",)),
-    "D": (["_ref", "atk3_hit", "special1", "special2"], ("_ref",)),
+    "B": (["_ref", "jump", "apex", "fall", "land"], ("jump", "apex", "fall")),
+    "C": (["_ref", "atk1_wind", "atk1_hit", "atk2_hit"], ()),
+    "D": (["_ref", "atk3_hit", "special1", "special2"], ()),
     # 魔法大臣專屬：拿小熊貓子機聯絡失聯的熊貓
-    "E": (["_ref", "call1", "call2", "call3", "call4"], ("_ref",)),
+    "E": (["_ref", "call1", "call2", "call3", "call4"], ()),
 }
+
+
+def raw_sources(who, letters="ABCD", extra=()):
+    """從 assets/character/<who>/raw/ 撿出以 A、B、C… 開頭的綠幕圖。
+
+    檔名只要開頭對就好（A.png / A-run.jpg / A_跑步.png 都可以）。
+    extra 是額外的舊素材，格式與 sources 相同——目前小公主的
+    hurt / sit_cry / victory 還是沿用上一批，所以要從那裡帶進來。
+    """
+    import glob
+    d = os.path.join(ROOT, "assets", "character", who, "raw")
+    out = []
+    for L in letters:
+        hits = sorted(g for g in glob.glob(os.path.join(d, L + "*"))
+                      if os.path.splitext(g)[1].lower() in (".png", ".jpg", ".jpeg", ".webp"))
+        if not hits:
+            raise SystemExit("!! 找不到 %s/%s*.(png|jpg)" % (d, L))
+        if len(hits) > 1:
+            print("   %s 開頭有多個檔案，用 %s" % (L, os.path.basename(hits[0])))
+        names, air = NEXT_SHEETS[L]
+        ref = names[0] if names[0] != "_ref" else "_ref"
+        out.append((hits[0], names, air, ref))
+    return out + list(extra)
+
 
 if __name__ == "__main__":
     U = "/root/.claude/uploads/a00c3426-eadb-56be-b7d5-c44c6a7b378f/"
     who = sys.argv[1] if len(sys.argv) > 1 else "knight"
     cfg = CHARACTERS[who]
     print("=== %s ===" % who)
-    build(
-        sources=[(U + f, n, a, r) for f, n, a, r in cfg["sources"]],
-        dst=cfg["dst"],
-        ref_frame=cfg["ref"],
-        target_h=cfg.get("target_h"),
-    )
+    if "raw" in cfg:
+        srcs = raw_sources(*cfg["raw"],
+                           extra=[(U + f, n, a, r) for f, n, a, r in cfg.get("extra_sources", [])])
+    else:
+        srcs = [(U + f, n, a, r) for f, n, a, r in cfg["sources"]]
+    build(sources=srcs, dst=cfg["dst"], ref_frame=cfg["ref"], target_h=cfg.get("target_h"))
