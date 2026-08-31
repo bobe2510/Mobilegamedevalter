@@ -1711,13 +1711,42 @@ if (ui.cutSkip) {
 
 ui.best.textContent = G.best;
 
-// 結算畫面會從這兩張裡隨機挑一張（缺檔就自動略過）
+// 結算插畫：有該角色專屬的就用，沒有才退回小公主那組（她有兩張，隨機挑）
 const DEFEAT_ART = ['assets/cart.png', 'assets/cry.png'];
+
+function defeatArtFor(c) {
+  return c.key === 'knight' ? DEFEAT_ART[Math.floor(Math.random() * DEFEAT_ART.length)]
+    : c.dir + '/defeat.jpg';
+}
 
 function pickDefeatArt() {
   const el = document.getElementById('cryArt');
   if (!el) return;
-  el.src = DEFEAT_ART[Math.floor(Math.random() * DEFEAT_ART.length)];
+  const want = defeatArtFor(CHAR);
+  el.classList.remove('hidden');
+  ui.over.classList.remove('has-portrait');
+  el.onload = () => { if (el.naturalWidth) ui.over.classList.add('has-portrait'); };
+  // 缺該角色的圖就退回小公主的，再缺就整個藏起來
+  el.onerror = () => {
+    if (el.src.endsWith('/defeat.jpg')) el.src = DEFEAT_ART[0];
+    else el.classList.add('hidden');
+  };
+  el.src = want;
+}
+
+// 標題封面：同樣是「有專屬的就用，沒有就用小公主的」
+function applyCover() {
+  const cover = document.getElementById('coverArt');
+  const wide = document.getElementById('coverArtWide');
+  const set = (el, own, base, cls) => {
+    if (!el) return;
+    ui.start.classList.remove(cls);
+    el.onload = () => { if (el.naturalWidth) ui.start.classList.add(cls); };
+    el.onerror = () => { if (el.getAttribute('src') !== base) el.src = base; };
+    el.src = CHAR.key === 'knight' ? base : own;
+  };
+  set(cover, CHAR.dir + '/cover.jpg', 'assets/cover.jpg', 'has-art');
+  set(wide, CHAR.dir + '/cover-wide.jpg', 'assets/cover-wide.jpg', 'has-wide');
 }
 
 // ------------------------------ 選角 ------------------------------
@@ -1765,6 +1794,7 @@ function buildCharSelect() {
       CHAR = c;
       localStorage.setItem('kg_char', c.key);
       loadHero(c.dir);
+      applyCover();
       refreshCharSelect();
     });
     box.appendChild(b);
@@ -1805,20 +1835,13 @@ buildCharSelect();
 (function setupArtwork() {
   const cover = document.getElementById('coverArt');
   const wide = document.getElementById('coverArtWide');
-  const cry = document.getElementById('cryArt');
-  // 圖片可能在這支 module 執行前就載完了，所以要先檢查 complete
-  const mark = (el, screen, cls) => {
-    if (!el) return;
-    const ok = () => { if (el.naturalWidth) screen.classList.add(cls); };
-    const fail = () => el.remove();
-    if (el.complete) { if (el.naturalWidth) ok(); else fail(); }
-    else { el.addEventListener('load', ok); el.addEventListener('error', fail); }
-  };
-  mark(cover, ui.start, 'has-art');
-  mark(wide, ui.start, 'has-wide');
-  mark(cry, ui.over, 'has-portrait');
-  // 結算插畫有兩張，先預載另一張
-  DEFEAT_ART.forEach((src) => { const i = new Image(); i.src = src; });
+  // 圖片可能在這支 module 執行前就載完了，所以先照 complete 的狀態標一次
+  for (const [el, cls] of [[cover, 'has-art'], [wide, 'has-wide']]) {
+    if (el && el.complete && el.naturalWidth) ui.start.classList.add(cls);
+  }
+  applyCover();
+  // 結算插畫先預載，倒下時才不會閃一下
+  const i = new Image(); i.src = defeatArtFor(CHAR);
 })();
 
 // ------------------------------ 主迴圈 ------------------------------

@@ -190,18 +190,132 @@ black ears, arms and legs, blue bow at the neck.
 
 ---
 
-## 7. 額度還有剩
+## 7. 立繪（插畫，不是點陣）
 
-依序：
-1. **大臣的立繪／封面用圖**（她篇的標題畫面）——貼「角色設定」段，
-   加上 `Style: Japanese anime light-novel illustration, NOT pixel art`，
-   直式 3:4，下方 30% 留白
-2. **長公主的 A**（大劍，姿勢清單同小公主，把 longsword 換成 greatsword）
-3. 開場 CG，清單見 [`../story/cutscenes.md`](../story/cutscenes.md)
+目前封面與結算插畫是**寫死小公主的**——選大臣去玩，倒下時看到的還是公主在哭。
+這四張補完就能改成依角色切換。
+
+| 檔名 | 用途 | 尺寸 |
+|---|---|---|
+| `mage/cover.jpg` | 選到她時的標題主視覺（直向手機） | 3:4 |
+| `mage/cover-wide.jpg` | 同上（橫向／桌機） | 16:9 |
+| `mage/defeat.jpg` | 她的戰敗結算插畫 | 3:2 |
+| `mage/bust-*.png` | 對話立繪（三種表情，可選） | 透明底，約 800px 高 |
+
+**共通的開頭**（四張都貼，注意風格段跟動作圖那份不一樣）：
+
+```
+[貼上第 1 節的「角色設定」段]
+
+Style: Japanese anime light-novel cover illustration, official key visual
+quality, crisp cel shading, clean line art, highly detailed. NOT pixel art.
+
+The outfit must match the attached pixel-art reference exactly — the pointed
+dark-blue witch hat with the gold buckle, the dark-blue robe-cape with gold
+trim over a white blouse, the black leggings and blue boots, the wooden staff
+with the blue crystal, and the small panda plush with a blue bow hanging from
+the staff shaft.
+```
+
+### 7-1 · 直式封面 `cover.jpg`
+
+> 設計上要跟小公主那張**打對台**：妹妹是日出的草原，她是**破曉前的夜色**。
+> 一個是「我要出發冒險」，一個是「我要去把人找回來」。
+
+```
+Full-body key visual, NIGHT scene just before dawn. She stands alone on a
+road leading out of the royal capital, the city gate and warm window lights
+small and far behind her. She has stopped and turned her head to look forward
+down the road — calm, level, unimpressed, but her eyes are hard.
+She holds her staff upright in one hand; the blue crystal is the brightest
+light in the frame and lights her face and the small panda plush from below.
+Her long black hair and the dark-blue robe drift in the night air.
+Deep blue and indigo palette, cold moonlight, a thin band of cold dawn light
+low on the horizon, drifting motes of blue magic light.
+
+Composition: vertical 3:4 portrait. The character fills the middle of the
+frame, her head near the upper third. Keep the bottom 30% of the image simple
+and mostly empty (just the dark road) — UI will be placed there.
+
+No text, no letters, no logo, no watermark, no signature, no border frame.
+```
+
+### 7-2 · 橫式封面 `cover-wide.jpg`
+
+```
+[附上剛產好的 cover.jpg，加一句：same character and same night scene as the
+attached image]
+
+Full-body key visual, horizontal composition, same night-before-dawn scene:
+she stands on the RIGHT third of the frame, staff resting against her
+shoulder, the small panda plush hanging at her chest, looking back over her
+shoulder toward the camera with a flat, level expression. The LEFT half of
+the image is the empty night road, distant capital lights and a thin cold
+dawn band on the horizon — kept simple and uncluttered.
+
+Composition: horizontal 16:9. Character on the right, empty night sky and
+road on the left (that space is reserved for the title UI).
+
+No text, no letters, no logo, no watermark, no signature, no border frame.
+```
+
+### 7-3 · 戰敗插畫 `defeat.jpg`
+
+> 小公主輸了是**哭哭**，她輸了是**不肯倒下**。反差軸線不一樣：
+> 公主是威嚴崩掉，大臣是那張撲克臉終於裂了。
+
+```
+Defeat illustration: she has dropped to one knee and cannot get up. One hand
+grips her staff, planted in the ground, holding her whole weight; the other
+hand is flat on the ground beside her. Her head is down, eyes closed, brows
+drawn together, breathing hard — exhausted and in pain, but not crying.
+Her hat has been knocked back off her forehead and hangs by its cord, her
+long black hair falling loose over her face. The small panda plush is still
+tied to the staff, hanging beside her hand.
+
+The point is the gap: the unflappable prodigy, finally out of composure —
+and still refusing to let go of the staff.
+
+Style: Japanese anime illustration, cel shading, cool blue lighting,
+slightly chibi proportions.
+
+Composition: 3:2 horizontal, character centred, simple soft background
+(dark ground with cold blue bokeh).
+
+No text, no letters, no logo, no watermark, no signature.
+```
+
+### 7-4 · 對話立繪 `bust-normal.png` / `bust-worried.png` / `bust-flat.png`（可選）
+
+> 她是撲克臉角色，所以**表情差分的 CP 值比誰都高**——沒有差分，她整段對話會像木頭。
+
+```
+Bust portrait (head and upper chest only), facing slightly toward the camera.
+TRANSPARENT background (alpha channel), no background scenery at all.
+The three images must be the SAME drawing with only the face changed —
+same pose, same angle, same size, same hat position, same hair.
+
+Expression for this one: [三選一，一次產一張]
+  A) NORMAL  — level, calm, deadpan, mouth a small flat line, eyes half-lidded
+  B) WORRIED — brows drawn together, eyes wide and looking off to the side,
+     mouth slightly open; the composure has slipped
+  C) EXASPERATED — eyes narrowed flat, one eyebrow raised, completely
+     unimpressed; the face she makes at the princess
+
+Style: Japanese anime illustration, cel shading, clean line art. NOT pixel art.
+Roughly 800 px tall. No text, no watermark, no signature.
+```
 
 ---
 
-## 8. 產完之後
+## 8. 額度還有剩
+
+1. **長公主的 A**（大劍，姿勢清單同小公主，把 `longsword` 換成 `greatsword`）
+2. 開場 CG，清單見 [`../story/cutscenes.md`](../story/cutscenes.md)
+
+---
+
+## 9. 產完之後
 
 丟到
 `https://github.com/bobe2510/Mobilegamedevalter/upload/<分支>/assets/character/mage/raw`
