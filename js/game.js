@@ -135,16 +135,58 @@ function loadHero(dir) {
 }
 loadHero(CHAR.dir);
 
+// 挑第一個這份 sheet 真的有的影格名。
+// 新素材（run1~4 / apex / land / atk1_wind…）有就用，沒有就退回舊的十格，
+// 所以換素材不用改程式，只補一部分也不會壞。
+function has(n) { return HERO.index[n] != null; }
+function pick(...names) {
+  for (const n of names) if (has(n)) return n;
+  return names[names.length - 1];
+}
+
 // 依狀態挑影格
 function heroFrame() {
   if (player.dead) return 'sit_cry';
   if (G.victoryT > 0) return 'victory';
-  if (player.spin > 0) return 'atk_thrust';
-  if (player.atk > 0) return (player.atkTotal - player.atk) < player.atkTotal * 0.33 ? 'atk_up' : 'atk_thrust';
+
+  if (player.spin > 0) {
+    const total = CHAR.ranged ? 36 : 44;
+    return player.spin > total * 0.6 ? pick('special1', 'atk_up') : pick('special2', 'atk_thrust');
+  }
+
+  if (player.atk > 0) {
+    const t = (player.atkTotal - player.atk) / player.atkTotal;
+    // 每一段都是「蓄力 → 命中」，第三段用專屬的重斬
+    if (player.combo === 2) return t < 0.30 ? pick('atk3_wind', 'atk1_wind', 'atk_up') : pick('atk3_hit', 'atk_thrust');
+    if (player.combo === 1) return t < 0.30 ? pick('atk1_wind', 'atk_up') : pick('atk2_hit', 'atk_thrust');
+    return t < 0.33 ? pick('atk1_wind', 'atk_up') : pick('atk1_hit', 'atk_thrust');
+  }
+
   if (player.inv > 58 && player.knock > 0) return 'hurt';
-  if (!player.onGround) return player.vy < 0 ? 'jump' : 'fall';
-  if (Math.abs(player.vx) > 0.35) return (Math.floor(player.anim / 9) % 2) ? 'walk1' : 'walk2';
+
+  if (!player.onGround) {
+    if (player.vy < -1.6) return 'jump';
+    if (player.vy > 1.6) return 'fall';
+    return pick('apex', 'jump');            // 最高點附近的滯空格
+  }
+
+  if (player.landT > 0) return pick('land', 'idle');   // 落地緩衝
+
+  if (Math.abs(player.vx) > 0.35) {
+    // 四格跑步循環：著地 → 通過 → 著地 → 通過
+    if (has('run1')) return RUN_CYCLE[Math.floor(player.anim / 6) % RUN_CYCLE.length];
+    return (Math.floor(player.anim / 9) % 2) ? 'walk1' : 'walk2';
+  }
   return 'idle';
+}
+
+const RUN_CYCLE = ['run1', 'run2', 'run3', 'run4'];
+
+// 站著不動時讓身體輕輕起伏，省掉一格呼吸用的素材
+function heroBob() {
+  if (!player.onGround || player.dead || player.atk > 0 || player.spin > 0) return 0;
+  if (Math.abs(player.vx) > 0.35) return 0;
+  return Math.sin(G.frame / 32) < 0 ? 0 : -1;
 }
 
 function drawHero(key, dir, px, py) {
@@ -186,7 +228,7 @@ const player = {
   onGround: false, coyote: 0, jumpBuf: 0, jumps: 0,
   hp: 5, maxHp: 5, inv: 0, rage: 0, maxRage: 100,
   atk: 0, atkTotal: 18, combo: 0, chain: 0, spin: 0, spinTick: 0, shotFired: false,
-  anim: 0, hitIds: new Set(), knock: 0, dead: false,
+  anim: 0, hitIds: new Set(), knock: 0, dead: false, landT: 0,
 };
 
 // 魔法大臣派來的熊貓娃娃，平常跟在公主身後
@@ -278,7 +320,7 @@ function startStage(n) {
   enemies = []; items = []; shots = []; waves = []; parts = []; texts = [];
   for (const d of stage.drops) items.push({ ...d, id: uid++, vy: 0, t: 0, ground: false });
   player.x = 40; player.y = GROUND; player.vx = 0; player.vy = 0;
-  player.dir = 1; player.atk = 0; player.spin = 0; player.inv = 60; player.dead = false;
+  player.dir = 1; player.atk = 0; player.spin = 0; player.inv = 60; player.dead = false; player.landT = 0;
   cam.x = 0; cam.lockMin = 0; cam.lockMax = Infinity;
   pet.x = player.x - 30; pet.y = GROUND; pet.vy = 0; pet.dir = 1; pet.hidden = false;
   G.stage = n;
@@ -798,10 +840,13 @@ function updatePlayer() {
   player.x = clamp(player.x, cam.x + 7, Math.min(stage.len - 7, cam.x + VW - 7));
 
   const wasAir = !player.onGround;
+  const fallSpd = player.vy;
   groundCollide(player);
+  if (player.landT > 0) player.landT--;
   if (player.onGround) {
     player.coyote = 7; player.jumps = 0;
     if (wasAir && player.vy === 0) {
+      if (fallSpd > 4) player.landT = 9;      // 摔得夠重才播落地緩衝
       for (let i = 0; i < 5; i++) parts.push({ x: player.x + rnd(-6, 6), y: player.y, vx: rnd(-1.2, 1.2), vy: rnd(-1, -0.2), life: 12, c: '#cbb894', s: 1, g: 0.08 });
     }
   }
@@ -1199,12 +1244,24 @@ function drawPlayerHD() {
       parts.push({ x: player.x + Math.cos(a) * 42, y: player.y - 4, vx: 0, vy: rnd(-2.4, -1),
         life: 20, c: '#9fe4ff', s: 2, g: 0 });
     }
-    drawHero('atk_thrust', player.dir, player.x, player.y);
+    drawHero(pick('special1', 'atk_thrust'), player.dir, player.x, player.y);
+    return;
+  }
+
+  if (player.spin > 0 && has('special1')) {
+    // 有專屬的大招影格：兩格交替，不用把整張圖轉起來
+    drawHero(key, player.dir, player.x, player.y);
+    const cx = player.x - cam.x, cy = player.y - HERO_H * 0.5;
+    ctx.strokeStyle = 'rgba(191,233,255,0.85)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 56 + Math.sin(G.frame * 0.4) * 5, 0, Math.PI * 2);
+    ctx.stroke();
     return;
   }
 
   if (player.spin > 0) {
-    // 旋風斬：原地旋轉 + 劍光圈
+    // 沒有專屬影格：沿用「把 atk_thrust 轉起來」的做法
     const cx = player.x - cam.x, cy = player.y - HERO_H * 0.5;
     ctx.save();
     ctx.imageSmoothingEnabled = true;
@@ -1223,7 +1280,7 @@ function drawPlayerHD() {
     return;
   }
 
-  drawHero(key, player.dir, player.x, player.y);
+  drawHero(key, player.dir, player.x, player.y + heroBob());
 
   // 劍光
   if (player.atk > 0 && !CHAR.noSlashFx && !CHAR.ranged) {
@@ -1855,6 +1912,7 @@ resize();
 
 // 對外除錯用
 window.__game = { G, player, S, HERO, cut, playCut, scriptFor, midFor, toTitle, FINAL_STAGE,
+  get frame() { return heroFrame(); },
   get shots() { return shots; }, get enemies() { return enemies; }, get stage() { return stage; },
   get VW() { return VW; }, VH, get RES() { return RES; }, GROUND, HERO_H,
   newGame, startStage, cam };

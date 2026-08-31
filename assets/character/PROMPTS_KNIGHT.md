@@ -231,10 +231,25 @@ No text, no letters, no logo, no watermark, no signature, no border frame.
 
 ---
 
-## 9. 產完給我，我會做
+## 9. 程式端已經先接好了
 
-1. 去背合併：`python3 tools/build_character.py knight`
-2. 驗證每一格沒有被切到
-3. 把跑步接成 4 格循環 + 加上身體上下浮動，落地緩衝接進狀態機
-4. 三段連擊拆成蓄力／命中，旋風斬換成專用的兩格
-5. 換掉封面
+動畫狀態機已經改成**看得懂新格名、也相容舊素材**（`js/game.js` 的 `heroFrame()`）：
+
+| 狀態 | 優先用 | 沒有就退回 |
+|---|---|---|
+| 跑步 | `run1`→`run2`→`run3`→`run4` 循環 | `walk1`/`walk2` 互換 |
+| 最高點 | `apex` | `jump` |
+| 落地 | `land`（摔速 > 4 才播，9 幀） | `idle` |
+| 第一段 | `atk1_wind` → `atk1_hit` | `atk_up` → `atk_thrust` |
+| 第二段 | `atk1_wind` → `atk2_hit` | 同上 |
+| 第三段 | `atk3_wind` → `atk3_hit` | 同上 |
+| 大招 | `special1` → `special2`（不再整張圖硬轉） | 轉 `atk_thrust` |
+
+站著不動時身體會輕輕起伏（程式做的），所以**呼吸不用另外畫一格**。
+
+圖進來之後我只要做：
+
+1. 檢查：`python3 tools/check_sheet.py <圖> <格數>`
+2. 去背合併：`python3 tools/build_character.py knight`
+3. 驗證每一格沒有被切到
+4. 換掉封面
