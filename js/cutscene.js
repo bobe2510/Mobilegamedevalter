@@ -2,9 +2,11 @@
 // 過場播放器 — 開場 CG、洛克人式中段對話、結局共用同一支。
 //
 // 資料格式（見 assets/story/cutscenes.md）：
-//   [{ cg, who, name, text, black, center, hold }]
+//   [{ cg, who, expr, name, text, black, center, hold }]
 //     cg     圖片路徑；有值就換背景圖（沒填 = 沿用上一句的圖）
 //     who    說話者的角色代號（knight / mage / elder / panda…），用來抓頭像
+//     expr   表情代號（normal / worried / scold…）；有對應的半身立繪就畫半身，
+//            沒有就退回圓形頭像
 //     name   顯示在名牌上的名字；沒填就沿用 who 的預設名
 //     text   台詞；不填 name 就是旁白（不畫名牌）
 //     black  true = 黑底（用在「一行帶過」的場景）
@@ -40,6 +42,7 @@ export class Cutscene {
   constructor(opts = {}) {
     this.sfx = opts.sfx || null;
     this.portraitOf = opts.portraitOf || (() => null);
+    this.bustOf = opts.bustOf || (() => null);
     this.drawMascot = opts.drawMascot || null;   // 熊貓沒有頭像圖，用遊戲內的 sprite 畫
     this.active = false;
     this.script = [];
@@ -70,7 +73,10 @@ export class Cutscene {
 
   _preloadAhead() {
     for (let k = this.i; k < Math.min(this.script.length, this.i + 3); k++) {
-      if (this.script[k].cg) preload(this.script[k].cg);
+      const l = this.script[k];
+      if (l.cg) preload(l.cg);
+      const b = this.bustOf(l.who, l.expr);
+      if (b) preload(b);
     }
   }
 
@@ -234,7 +240,7 @@ export class Cutscene {
     let tx = x + pad;
     const face = h - pad * 2;
     if (l.who) {
-      const drew = this._drawFace(ctx, l.who, x + pad, top + pad, face);
+      const drew = this._drawFace(ctx, l, x + pad, top + pad, face);
       if (drew) tx = x + pad + face + pad;
     }
 
@@ -271,8 +277,18 @@ export class Cutscene {
     ctx.fill();
   }
 
-  _drawFace(ctx, who, x, y, size) {
+  // 有表情差分（bust）就畫半身，沒有就退回圓形頭像
+  _drawFace(ctx, l, x, y, size) {
+    const who = l.who;
     if (who === 'panda' && this.drawMascot) { this.drawMascot(ctx, x, y, size); return true; }
+
+    const bust = this.bustOf(who, l.expr);
+    if (bust) {
+      const e = getImage(bust);
+      if (e && e.ok) { this._drawBust(ctx, e.img, x, y, size); return true; }
+      if (e && !e.failed) return false;      // 還在載，這一幀先不畫
+    }
+
     const src = this.portraitOf(who);
     const e = src ? getImage(src) : null;
     if (!e || !e.ok) return false;
@@ -291,6 +307,18 @@ export class Cutscene {
     ctx.arc(x + size / 2, y + size / 2, size / 2 - 0.5, 0, Math.PI * 2);
     ctx.stroke();
     return true;
+  }
+
+  // 半身立繪：從文字框往上長出來，底邊切齊框底
+  _drawBust(ctx, img, x, y, size) {
+    const h = size * 2.1;
+    const w = img.naturalWidth / img.naturalHeight * h;
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(img, Math.round(x + (size - w) / 2), Math.round(y + size - h),
+      Math.round(w), Math.round(h));
+    ctx.imageSmoothingEnabled = false;
+    ctx.restore();
   }
 
   _nameOf(who) {

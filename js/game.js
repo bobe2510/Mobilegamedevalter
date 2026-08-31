@@ -1549,8 +1549,24 @@ function render(withHud = true) {
 const FINAL_STAGE = 9;
 
 const FACE = { knight: 1, mage: 1, elder: 1 };
+
+// 表情差分的半身立繪。切出來的檔案放 assets/character/<角色>/bust/<表情>.png，
+// 哪個角色做好了就把代號列進來；沒列到的、或檔案還沒有的，一律退回圓形頭像。
+const BUSTS = {
+  mage: ['normal', 'worried', 'relieved', 'scold', 'speechless',
+         'sly', 'serious', 'flustered', 'soft'],
+};
+
+function bustOf(who, expr) {
+  const list = BUSTS[who];
+  if (!list) return null;
+  const name = list.includes(expr) ? expr : 'normal';
+  return `assets/character/${who}/bust/${name}.png`;
+}
+
 const cut = new Cutscene({
   sfx,
+  bustOf,
   portraitOf: (who) => (FACE[who] ? `assets/character/${who}/face.png` : null),
   // 熊貓沒有頭像圖，直接用遊戲裡的跟班 sprite 放大
   drawMascot: (c, x, y, size) => {

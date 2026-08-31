@@ -285,26 +285,142 @@ Composition: 3:2 horizontal, character centred, simple soft background
 No text, no letters, no logo, no watermark, no signature.
 ```
 
-### 7-4 · 對話立繪 `bust-normal.png` / `bust-worried.png` / `bust-flat.png`（可選）
+### 7-4 · 對話立繪：表情差分（兩張綠幕，各 5 格）
 
-> 她是撲克臉角色，所以**表情差分的 CP 值比誰都高**——沒有差分，她整段對話會像木頭。
+> **一定要拼在同一張圖裡。** 分開產每張的臉會飄——這跟動作圖是同一個問題，
+> 而且臉比身體更禁不起飄。綠幕排成一列，我的程式會自動切開、對齊頭部。
+
+#### 人設：對外撲克臉，對公主才有表情
+
+這是她全部表情的那條軸線。**跟她講話的對象決定她的臉**：
+
+| 對象 | 她的樣子 |
+|---|---|
+| 陛下、朝臣、敵人 | 冷靜、面無表情、講話很短 |
+| 小公主 | 整個活過來——會罵、會笑、會傻眼、會被氣到 |
+
+所以「平常」那格要**真的很平**，反差才立得起來。
+
+#### 表情 A · `mage/bust-a.jpg`（5 格）
 
 ```
-Bust portrait (head and upper chest only), facing slightly toward the camera.
-TRANSPARENT background (alpha channel), no background scenery at all.
-The three images must be the SAME drawing with only the face changed —
-same pose, same angle, same size, same hat position, same hair.
+[貼上第 1 節的「角色設定」段]
 
-Expression for this one: [三選一，一次產一張]
-  A) NORMAL  — level, calm, deadpan, mouth a small flat line, eyes half-lidded
-  B) WORRIED — brows drawn together, eyes wide and looking off to the side,
-     mouth slightly open; the composure has slipped
-  C) EXASPERATED — eyes narrowed flat, one eyebrow raised, completely
-     unimpressed; the face she makes at the princess
+FIVE BUST PORTRAITS of the same character in ONE image, in a single
+horizontal row, left to right.
 
-Style: Japanese anime illustration, cel shading, clean line art. NOT pixel art.
-Roughly 800 px tall. No text, no watermark, no signature.
+CRITICAL — this is the whole point of the sheet:
+Every one of the five is the SAME DRAWING. Identical head size, identical
+angle, identical shoulder line, identical hat position and shape, identical
+hair silhouette, identical collar and robe. ONLY THE FACE CHANGES —
+eyes, eyebrows, mouth, blush. Imagine one drawing with five different faces
+pasted onto it. If the head size or the hat angle differs between two of
+them, the sheet is wrong.
+
+Framing: HEAD AND SHOULDERS ONLY — crop just below the collarbone.
+Not a half body. No staff, no hands, no panda in frame.
+Facing slightly toward the viewer, three-quarter view.
+
+Expressions, left to right:
+
+1. NORMAL — completely deadpan. Eyes half-lidded and level, eyebrows flat,
+   mouth a small flat line. No emotion at all. This is her public face and
+   the reference for the whole sheet.
+
+2. WORRIED — she cannot reach the panda and does not know where the princess
+   is. Eyebrows pushed together and up in the middle, eyes wide and looking
+   off to one side, mouth slightly open. The composure has cracked.
+
+3. RELIEVED — she has just found a trace of the princess. Eyes open wide and
+   bright with a highlight, eyebrows lifted, a small genuine smile she is not
+   trying to hide. Rare and warm.
+
+4. SCOLDING — she has found the princess herself, safe. Eyebrows down and
+   angry, eyes narrowed, mouth open mid-shout, a cross-popping anger mark on
+   her temple, cheeks slightly flushed. Furious because she was terrified.
+   This is the "you absolute idiot" face.
+
+5. SPEECHLESS — the princess has said something stupid again. Eyes flat and
+   half-lidded, both eyebrows raised, mouth a wavy line, one bead of sweat
+   at her temple. Utterly done with her.
+
+Style: Japanese anime illustration, cel shading, clean line art, highly
+detailed. NOT pixel art.
+
+TECHNICAL REQUIREMENTS:
+- Background: PURE GREEN (#00FF00), completely flat. No gradient, no shadow,
+  no vignette.
+- Leave a WIDE, CLEARLY VISIBLE GREEN GAP between every pair of portraits.
+  No hair, hat brim or shoulder may touch a neighbour.
+- All five at exactly the same scale.
+- No text, no labels, no numbers, no panel borders, no frames.
 ```
+
+#### 表情 B · `mage/bust-b.jpg`（5 格）
+
+> 第 1 格**重畫一次同樣的 NORMAL**，我用它把兩張的縮放對齊，合併時會丟掉。
+
+```
+[貼上「角色設定」段]
+[附上剛產好的 bust-a.jpg，加一句：
+ same character, same drawing, same head size and same framing as the
+ attached image — only the faces differ]
+
+FIVE BUST PORTRAITS, same rules as before: one drawing, five faces,
+head and shoulders only, pure green background, wide gaps, same scale.
+
+Expressions, left to right:
+
+1. NORMAL — exactly the same deadpan face as portrait 1 of the previous
+   sheet. This one exists only to match the two sheets together.
+
+2. SLY — she has just said something rude and is walking it back. A quick
+   ingratiating smile, eyes curved shut, one bead of cold sweat, eyebrows
+   raised apologetically. Caught and covering.
+
+3. SERIOUS — in battle, reading the enemy. Eyes sharp and fully open,
+   pupils small, eyebrows level and low, mouth firm. Cold and focused —
+   this is the prodigy, not the friend.
+
+4. FLUSTERED — something has genuinely got past her guard. Cheeks flushed
+   red, eyes wide and darting away, eyebrows up, mouth small and tight.
+   She hates that this is happening.
+
+5. SOFT — a quiet smile she only makes when the princess is not looking.
+   Eyes gently curved, eyebrows relaxed, a small warm closed-mouth smile,
+   faint blush. Fond.
+
+Style, technical requirements: identical to the previous sheet.
+```
+
+#### 產完之後
+
+檔名開頭 **`bust-a`** / **`bust-b`**，跟動作圖一起丟到 `mage/raw/`，然後：
+
+```bash
+python3 tools/build_busts.py mage
+```
+
+會自動切開、**用頭高統一縮放、用臉的中心對齊**，輸出成
+`assets/character/mage/bust/normal.png` 等九張。
+（立繪沒有地平線可以對，所以對齊方式跟動作圖不一樣——切表情時頭不會跳。）
+
+程式端已經接好了：台詞加一個 `expr` 欄位就會換表情，沒有立繪的角色
+自動退回圓形頭像。大臣的 14 句台詞我已經標好表情了。
+
+#### 用得到的地方
+
+| 表情 | 用在哪 |
+|---|---|
+| NORMAL | 大部分旁白與交代 |
+| WORRIED | 她篇開場「……斷了。熊貓還在動，但我連不上它」 |
+| RELIEVED | 找到公主的蹤跡 |
+| SCOLDING | 她篇結局「妳這個笨蛋」／大結局「誰叫你沒事穿披風啊笨蛋」 |
+| SPEECHLESS | 公主又講了什麼蠢話 |
+| SLY | 大結局「隊長姐姐我不是說你」 |
+| SERIOUS | 巴西理斯克戰前的分析 |
+| FLUSTERED | 大結局「完了，我不純潔了」 |
+| SOFT | 開場把人格複製進熊貓時「去吧，好好保護那個笨蛋」 |
 
 ---
 
