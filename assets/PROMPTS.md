@@ -43,9 +43,10 @@ eyelashes, light blush, fair skin, gentle dignified expression.
 She wears an elegant WHITE dress-armor with rich GOLD filigree trim: a white
 breastplate with a blue gem at the collar, white gloves, a gold-and-blue jeweled
 belt, a short white layered skirt with gold embroidery, white thigh-high stockings
-and white-and-gold armored boots. A flowing WHITE cape with a gold edge hangs
-from her shoulders — a cool silver-white, clearly cooler than the warm white
-of her armor, never pure white.
+and white-and-gold armored boots. Rounded white-and-gold armored PAULDRONS on
+both shoulders and a BLUE GEM in a gold setting at the collar. A flowing WHITE
+cape with a gold edge hangs from her shoulders — warm ivory white, shaded so it
+reads as a separate layer over the armor.
 
 She carries a European longsword with a deep-blue grip, an ornate gold cross-guard
 and a blue jewel set in the guard.
@@ -139,8 +140,12 @@ No text, no letters, no logo, no watermark, no signature.
 封面本來就畫成白色，所以封面不用動；反而是**遊戲 sprite 原本是紅的，已經改成冷銀白**
 （動作圖、轉身圖、結算插畫都改好了）。
 
-⚠️ 白披風不能用純白——配上白金鎧甲會糊成一團（實測 ΔE 只有 17.6）。
-要用**冷銀白**：偏冷、偏灰，跟鎧甲的暖白分得開。上面的角色設定段已經寫進去了。
+白披風用**暖象牙白**，跟立繪一致；跟鎧甲的分離靠**金色滾邊**和陰影，不要靠改色相
+（試過冷銀白，會偏灰、跟立繪對不上）。上面的角色設定段已經寫進去了。
+
+另外**肩甲和胸口的藍寶石**在 sprite 上有、舊封面上沒有——定案是**有**，
+所以兩張封面要重產。可複製的 prompt 見
+[`character/PROMPTS_KNIGHT.md`](character/PROMPTS_KNIGHT.md)。
 
 紅緞帶維持紅色，那是兩姊妹的家族共通點。
 

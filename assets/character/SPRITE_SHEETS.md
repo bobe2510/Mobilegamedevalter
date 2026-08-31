@@ -54,7 +54,9 @@ Grok 的輸出固定是 **1168 × 784**，這是天花板。實測目前四張�
 
 | 角色 | 部位 | 立繪 | 原本的 sprite | 定案 |
 |---|---|---|---|---|
-| 小公主 | **披風** | **白色**（金藤蔓紋） | 紅色 | ✅ **白色（冷銀白）**，sprite 已改 |
+| 小公主 | **披風** | **白色**（金藤蔓紋） | 紅色 | ✅ **白色（暖象牙，貼齊立繪）**，sprite 已改 |
+| 小公主 | **肩甲** | 沒有 | **有** | ✅ **有**（立繪要補） |
+| 小公主 | **胸口寶石** | 沒有 | **有** | ✅ **有**（立繪要補） |
 | 小公主 | 髮飾緞帶 | 紅 | 紅 | ✅ **維持紅**（跟姐姐的家族共通點） |
 | 小公主 | 上衣 | 白色長袖洋裝甲 | 白金胸甲、短袖 | ✅ sprite |
 | 大臣 | **滾邊** | 銀白色 | **金色** | ✅ **金色** |
@@ -80,7 +82,10 @@ Grok 的輸出固定是 **1168 × 784**，這是天花板。實測目前四張�
 | **B 冷銀白** | **30.2** | 59.5 | ✅ **採用**——看起來還是白的，但跟鎧甲分得開 |
 | C 淡藍灰 | 43.2 | 58.9 | 分得最開，但開始讀成「藍披風」，撞到大臣的色 |
 
-所以定案是 **B：冷銀白（偏冷、偏灰的白），不是純白**。
+一開始採用了 B，但實際看**偏灰**、跟立繪的白披風對不上，所以改成
+**貼齊立繪的暖象牙白**（實測封面披風是 H 0.098 / S 0.115 / V 0.46～0.98）。
+對比會比 B 低一點，但分離感改由**金色滾邊**和披風本身的陰影負責——
+立繪就是這樣處理的，重拍的動作圖也要照這個做。
 現有的 sprite、轉身圖、結算插畫我已經照 B 改好了，用的是
 [`tools/recolor_cape.py`](../../tools/recolor_cape.py)（它會自動避開紅緞帶）。
 這是**過渡處理**——之後重拍的動作圖會直接畫成白的，就不需要改色了。
@@ -89,7 +94,10 @@ Grok 的輸出固定是 **1168 × 784**，這是天花板。實測目前四張�
 > 動態辨識更好，而且是「她其實已經帶著姐姐的顏色，只是自己不知道」的暗喻。
 > 但這會多一個變數，第一版我建議先不要——上面的數字顯示不加也夠用。
 
-封面 `cover.jpg` / `cover-wide.jpg` 本來就是白披風，所以**不用重產**。
+封面 `cover.jpg` / `cover-wide.jpg` 本來就是白披風，披風本身不用改；
+但它**少了肩甲和胸口寶石**，跟 sprite 是兩套衣服，所以還是要重產一次。
+小公主的完整 prompt 包（含新封面）見
+[`PROMPTS_KNIGHT.md`](PROMPTS_KNIGHT.md)。
 
 ---
 
@@ -115,9 +123,8 @@ Character: a young princess-knight girl, cheerful and a bit reckless.
   at the collar, white puffed shoulder pieces, white gloves, gold belt,
   short white layered skirt with a gold hem
 - Legs: WHITE thigh-high stockings, WHITE-and-GOLD armored boots
-- Cape: WHITE cape hanging from both shoulders — a COOL SILVER-WHITE,
-  clearly cooler and greyer than the warm white of her armor so the two
-  never blend together. NOT pure white. Gold edge trim.
+- Cape: a WHITE cape with a GOLD edge, hanging from both shoulders.
+  Warm ivory white, shaded so it reads as a separate layer over the armor.
 - Weapon: a straight one-handed longsword — pale blue steel blade,
   GOLD cross-guard, blue grip
 ```
@@ -185,7 +192,8 @@ TECHNICAL REQUIREMENTS — follow these exactly:
 
 ## 六、要產的圖：一人 4 張，共 13 張
 
-順序建議：小公主 A→B→C→D，再大臣，再長公主。每張都附上一張當參考圖。
+順序建議：小公主 A→B→C→D，再大臣，再長公主。每張都附上參考圖。
+**小公主的完整可複製版本見 [`PROMPTS_KNIGHT.md`](PROMPTS_KNIGHT.md)。**
 
 ### A · 跑步循環（5 格）
 
