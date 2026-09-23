@@ -278,6 +278,15 @@ TECHNICAL REQUIREMENTS — follow these exactly:
 4. 大臣的子機動作接成一個可以在對話裡播的小演出
 5. 依這批圖更新 `assets/PROMPTS.md` 的角色設定，之後 21 張 CG 都從那份長出來
 
+## 七之一、Runware API（已接通）
+
+動作圖以外的素材，我可以直接用 Runware 產，不用再燒 Grok 額度。
+實測結果、模型選擇的坑、以及哪些該用 Grok 哪些該用 Runware，
+見 [`RUNWARE.md`](RUNWARE.md)。
+
+一句話版本：**動作 sprite 用 Grok（小尺寸讀得清楚），
+大圖和表情差分用 Runware（表情用「編輯」，只改臉、其餘不動）。**
+
 ## 七之二、圖要怎麼給我
 
 ⚠️ **貼在對話裡的圖，在遠端 session 不一定進得了檔案系統**（實測過會失敗），
