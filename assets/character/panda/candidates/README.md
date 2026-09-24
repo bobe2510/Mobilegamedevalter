@@ -19,3 +19,25 @@ Qwen-Image-3.0，同一份 prompt、六個 seed，共 US$0.18。
 
 - **站姿**：跟在公主身邊的跟班、會講話（遊戲內的點陣跟班就是這個）
 - **四足**：戰敗時拉熊貓車（現有的 `assets/cart.png` 是這個樣子）
+
+
+---
+
+## 去縫線版（`deseam-*.jpg`）
+
+從 `seed-7004.jpg` 用 `edit` 改的——**只動縫線，其他不重畫**。
+
+| 檔案 | 正面肚子 | 背面直縫 | 側面縫線 | 蝴蝶結 |
+|---|---|---|---|---|
+| `deseam-8101` | ✅ 乾淨 | ✅ 沒了 | 沒了 | 偏小 |
+| `deseam-8102` | ✅ 乾淨 | ✅ 沒了 | 沒了 | 中 |
+| **`deseam-8103`** | ✅ 乾淨 | ✅ 沒了 | 沒了 | ✅ **最大最搶眼** |
+
+### 學到的：編輯模式裡「沒點名保護的東西會漂」
+
+第一輪只說「去掉縫線、其他不變」，結果**蝴蝶結縮水了**——而那正是選 7004 的原因。
+第二輪把蝴蝶結明確寫進保護清單（"must keep exactly the same LARGE size, the same wide
+loops and the same long hanging tails — do not shrink it, do not turn it into a thin neck
+ribbon"）才保住。
+
+**下次用 `edit` 時，要保留的特徵要一項一項列出來，不能只說「其他不變」。**
