@@ -85,6 +85,49 @@ def figures(path, names, air, ref):
     return out
 
 
+# 門檻是量出來的，不是猜的：熊貓十格裡正常格跟基準格的差異最大 0.060
+# （pull 四足、jump 騰空這種姿勢差很多的也才 0.052~0.060），
+# 而少了一隻耳朵和一個黑眼圈的壞格是 0.154。中間有 2.5 倍間隔，取 0.10。
+OUTLIER = 0.10
+
+
+def warn_outliers(prepared, ref_frame):
+    """比對各格的用色比例，跟基準格差太多就示警。
+
+    會抓到的典型壞格：某個部位整個不見了（熊貓的 tilt 少了一隻耳朵和一個
+    黑眼圈，黑色比例就掉了一截）、或是顏色整個跑掉。抓不到的是「畫錯但
+    用色正常」，那種還是要用眼睛看——但這一層能擋掉最明顯的那類。
+    """
+    def profile(img):
+        a = np.array(img)
+        m = a[..., 3] > 120
+        if m.sum() < 50:
+            return None
+        px = a[..., :3][m].astype(float)
+        lum = px.mean(axis=1)
+        # 暗色／亮色／彩色各占多少，對「少了一塊黑」這種事很敏感
+        return np.array([(lum < 70).mean(), (lum > 190).mean(),
+                         (px.max(axis=1) - px.min(axis=1) > 40).mean()])
+
+    base = next((profile(p["img"]) for p in prepared if p["name"] == ref_frame), None)
+    if base is None:
+        return
+    bad = []
+    for p in prepared:
+        pr = profile(p["img"])
+        if pr is None:
+            continue
+        d = float(np.abs(pr - base).sum())
+        if d > OUTLIER:
+            bad.append((p["name"], d))
+    if bad:
+        print("\n⚠ 這幾格的用色跟基準格差很多，建議打開來看（可能少畫了東西）：")
+        for n, d in sorted(bad, key=lambda x: -x[1]):
+            print("   %-11s 差異 %.2f" % (n, d))
+        print("   重產單格：python3 tools/gen_sprites.py <角色> %s --seed <換一個>"
+              % " ".join(n for n, _ in bad))
+
+
 def build(sources, dst, ref_frame, target_h=None):
     dst = dst if os.path.isabs(dst) else os.path.join(ROOT, dst)
     all_figs, ref_h = [], None
@@ -134,6 +177,8 @@ def build(sources, dst, ref_frame, target_h=None):
                              h=round(f["body_h"] * s), scale=s))
         print("  %-11s 縮放 %.3f → 身高 %3d px  頭高 %3d px"
               % (f["name"], s, round(f["body_h"] * s), round(f.get("head_h", 0) * s)))
+
+    warn_outliers(prepared, ref_frame)
 
     PADX = int(max(max(p["ax"] for p in prepared),
                    max(p["img"].width - p["ax"] for p in prepared))) + 4

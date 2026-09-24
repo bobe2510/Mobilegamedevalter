@@ -90,8 +90,11 @@ PANDA_POSES = {
            "to the sides for balance.",
  "talk":   "The plush panda stands upright and gestures as if speaking politely, one short arm "
            "raised and held forward, head tilted slightly up, mouth open a little.",
- "tilt":   "The plush panda stands upright and tilts its head far to one side in curiosity, "
-           "arms still at its sides.",
+ "tilt":   "The plush panda stands upright and tilts its head to one side in curiosity, "
+           "arms still at its sides. The head is only tilted about 25 degrees — it is NOT "
+           "turned away and NOT seen from behind. BOTH round black ears stay clearly visible "
+           "on top of the head, and BOTH black eye patches stay clearly visible on the face. "
+           "The face keeps its two eyes, its nose and its stitched smile.",
  "pull":   "The plush panda is down on ALL FOURS like a real panda, leaning forward and "
            "straining to pull something heavy behind it, a simple brown leather harness around "
            "its shoulders, head low and determined.",
@@ -221,4 +224,10 @@ def build(who, only=None, seed=6001, w=768, h=1024):
 
 
 if __name__ == "__main__":
-    build(sys.argv[1], only=sys.argv[2:] or None)
+    args = sys.argv[1:]
+    seed = 6001
+    if "--seed" in args:
+        i = args.index("--seed")
+        seed = int(args[i + 1])
+        del args[i:i + 2]
+    build(args[0], only=args[1:] or None, seed=seed)
