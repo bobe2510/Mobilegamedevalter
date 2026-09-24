@@ -73,7 +73,38 @@ POSES = {
               "wide happy smile.",
 }
 
+# 熊貓的姿勢跟人不一樣：沒有武器，而且有「四足拉車」這個型態
+PANDA_POSES = {
+ "idle":   "The plush panda stands upright at rest, arms hanging at its sides, looking ahead.",
+ "walk1":  "The plush panda waddles forward: its RIGHT leg is forward and planted, the left leg "
+           "back, body tilted slightly forward, short arms swinging in opposition.",
+ "walk2":  "The plush panda is mid-waddle with BOTH FEET just off the ground in a small hop, "
+           "legs close together under the body, body at its highest point.",
+ "walk3":  "The plush panda waddles forward: its LEFT leg is forward and planted, the right leg "
+           "back, opposite arm swing to the previous pose.",
+ "walk4":  "The plush panda is mid-waddle with BOTH FEET just off the ground again, legs close "
+           "together, opposite arm swing.",
+ "jump":   "The plush panda hops upward, both short legs tucked up, both arms raised, body "
+           "stretched slightly taller.",
+ "fall":   "The plush panda is falling, short legs reaching down toward the ground, arms out "
+           "to the sides for balance.",
+ "talk":   "The plush panda stands upright and gestures as if speaking politely, one short arm "
+           "raised and held forward, head tilted slightly up, mouth open a little.",
+ "tilt":   "The plush panda stands upright and tilts its head far to one side in curiosity, "
+           "arms still at its sides.",
+ "pull":   "The plush panda is down on ALL FOURS like a real panda, leaning forward and "
+           "straining to pull something heavy behind it, a simple brown leather harness around "
+           "its shoulders, head low and determined.",
+}
+
 CHARS = {
+ "panda": dict(
+   ref="assets/character/panda/REFERENCE.png", s="It", p="its", w="",
+   poses=PANDA_POSES,
+   keep=("the same chubby plush panda body, the same face with the small black button eyes "
+         "and stitched smile, the same black ears and black arms and legs, the same white "
+         "face and white belly, and the same LARGE blue ribbon bow at its neck with wide "
+         "loops and long hanging tails")),
  "knight": dict(
    ref="assets/character/knight/REFERENCE.png", s="She", p="her", w="her longsword",
    keep=("the same face, the same golden-blonde high ponytail with the red ribbon, the same "
@@ -136,7 +167,7 @@ def build(who, only=None, seed=6001, w=768, h=1024):
     ref = reference(cfg["ref"])
     dst = os.path.join(ROOT, "assets", "character", who, "frames")
     os.makedirs(dst, exist_ok=True)
-    poses = dict(POSES)
+    poses = dict(cfg["poses"]) if "poses" in cfg else dict(POSES)
     poses.update(cfg.get("extra", {}))
     if only:
         poses = {k: v for k, v in poses.items() if k in only}
@@ -144,13 +175,19 @@ def build(who, only=None, seed=6001, w=768, h=1024):
         if missing:
             raise SystemExit("!! 沒有這些姿勢：%s" % ", ".join(sorted(missing)))
 
-    head = ("Use the character in the reference image. Keep her EXACTLY as she appears "
-            "there — %s, the same proportions and the same art style. Do not redesign her. "
-            % cfg["keep"])
+    it = cfg["s"] == "It"
+    head = ("Use the character in the reference image. Keep %s EXACTLY as %s appears "
+            "there — %s, the same proportions and the same art style. Do not redesign %s. "
+            % ("it" if it else "her", "it" if it else "she", cfg["keep"],
+               "it" if it else "her"))
+    import uuid
     tasks, names = [], []
     for name, tmpl in poses.items():
         pose = tmpl.format(s=cfg["s"], p=cfg["p"], w=cfg["w"])
+        # taskUUID 要自己先指定：下面用它把回應對回姿勢名稱，
+        # 不能等 call() 裡的 setdefault 補（那時對照表已經建好了）
         tasks.append({"taskType": "imageInference", "model": MODEL,
+                      "taskUUID": str(uuid.uuid4()),
                       "positivePrompt": head + pose + " " + FRAME + STYLE + BG,
                       "referenceImages": [ref], "width": w, "height": h,
                       "numberResults": 1, "seed": seed,

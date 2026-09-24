@@ -17,12 +17,21 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # repo 根�
 
 
 def head_height(rgb, solid, top, H):
-    """頭頂到下巴的高度；一姿勢一張時，用它把各張縮到同一個頭大小。"""
+    """頭的大小；一姿勢一張時，用它把各張縮到同一個頭大小。
+
+    人類角色用膚色找臉，量頭頂到下巴。非人角色（熊貓、魔獸）沒有膚色，
+    改量「上半部最寬的那一列」當頭寬——圓頭角色這個值很穩。
+    兩種量法不能混用，但同一個角色的每一格都會走同一條路徑，所以沒問題。
+    """
     r, g, b = [rgb[..., i].astype(int) for i in range(3)]
     skin = solid & (r > 195) & (g > 150) & (b > 120) & (r > b + 20) & ((r - g) < 75)
     band = skin[top:top + int(H * 0.5)]
     ys = np.where(band.any(axis=1))[0]
-    return int(ys.max()) + 1 if len(ys) else 0
+    if len(ys) and ys.max() > H * 0.1:
+        return int(ys.max()) + 1
+    # 沒有臉：用頭部區域的最大寬度
+    widths = solid[top:top + max(4, int(H * 0.45))].sum(axis=1)
+    return int(widths.max()) if len(widths) else 0
 
 
 def head_center_x(rgb, solid, top, H):
@@ -150,6 +159,8 @@ CHARACTERS = {
     # hurt / sit_cry / victory。合併完要跑 tools/recolor_cape.py 把舊那三格的
     # 紅披風改成白的（新圖本來就是白披風，不會被動到）。
     # 一姿勢一張（tools/gen_sprites.py 的輸出）
+    "panda_frames": dict(dst="assets/character/panda/anim", ref="idle",
+                         target_h=120, frames=("panda",)),
     "knight_frames": dict(dst="assets/character/knight/anim", ref="idle",
                           target_h=251, frames=("knight",)),
     "mage_frames": dict(dst="assets/character/mage/anim", ref="idle",

@@ -1,0 +1,22 @@
+{
+  "frames": [
+    "idle",
+    "fall",
+    "jump",
+    "pull",
+    "talk",
+    "tilt",
+    "walk1",
+    "walk2",
+    "walk3",
+    "walk4"
+  ],
+  "frame_w": 158,
+  "frame_h": 132,
+  "anchor": {
+    "x": 79,
+    "y": 128
+  },
+  "stand_h": 120,
+  "note": "anchor 是角色的頭部中心 x 與地平線 y；空中姿勢以頭頂對齊，其餘以地平線對齊"
+}

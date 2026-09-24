@@ -189,6 +189,58 @@ function heroBob() {
   return Math.sin(G.frame / 32) < 0 ? 0 : -1;
 }
 
+// ------------------------ 熊貓的動作圖（可選素材） ------------------------
+// assets/character/panda/anim/ 有 sheet.png + frames.json 就改用它，
+// 找不到就沿用 js/art.js 裡程式畫的點陣熊貓。
+const PET_H = 34;               // 站姿在遊戲座標裡的高度
+const PET = { ready: false, img: null, scale: 1, fw: 0, fh: 0, ax: 0, ay: 0, index: {} };
+
+(function loadPet() {
+  const img = new Image();
+  let meta = null;
+  const done = () => {
+    if (!meta || !img.naturalWidth) return;
+    PET.img = img;
+    PET.scale = PET_H / (meta.stand_h || 120);
+    PET.fw = meta.frame_w; PET.fh = meta.frame_h;
+    PET.ax = meta.anchor.x; PET.ay = meta.anchor.y;
+    meta.frames.forEach((n, i) => { PET.index[n] = i; });
+    PET.ready = true;
+  };
+  img.onload = done;
+  img.onerror = () => { PET.ready = false; };
+  img.src = 'assets/character/panda/anim/sheet.png';
+  fetch('assets/character/panda/anim/frames.json')
+    .then((r) => (r.ok ? r.json() : null))
+    .then((m) => { if (m && m.frames) { meta = m; done(); } })
+    .catch(() => {});
+})();
+
+const PET_WALK = ['walk1', 'walk2', 'walk3', 'walk4'];
+
+function petFrame() {
+  if (!PET.ready) return null;
+  if (!pet.onGround) return PET.index[pet.vy < 0 ? 'jump' : 'fall'] != null
+    ? (pet.vy < 0 ? 'jump' : 'fall') : 'idle';
+  if (Math.abs(pet.x - (player.x - player.dir * 46)) > 12 && PET.index.walk1 != null) {
+    return PET_WALK[Math.floor(pet.anim / 7) % PET_WALK.length];
+  }
+  return 'idle';
+}
+
+function drawPetSprite(key, dir, px, py) {
+  const i = PET.index[key] != null ? PET.index[key] : 0;
+  const s = PET.scale;
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  ctx.translate(Math.round(px), Math.round(py));
+  if (dir < 0) ctx.scale(-1, 1);
+  ctx.drawImage(PET.img, i * PET.fw, 0, PET.fw, PET.fh,
+    -PET.ax * s, -PET.ay * s, PET.fw * s, PET.fh * s);
+  ctx.imageSmoothingEnabled = false;
+  ctx.restore();
+}
+
 function drawHero(key, dir, px, py) {
   const i = HERO.index[key] != null ? HERO.index[key] : 0;
   const s = HERO.scale;
@@ -658,7 +710,11 @@ function drawCart() {
 
   // 玩偶熊貓司機（坐在車頭，會上下晃）
   const bob = Math.sin(f.cartX * 0.18) * 1;
-  drawSprite(S.panda, 1, x + 12, Math.round(top - 29 + bob));
+  if (PET.ready && PET.index.pull != null) {
+    drawPetSprite('pull', 1, x + 21, Math.round(top + bob));
+  } else {
+    drawSprite(S.panda, 1, x + 12, Math.round(top - 29 + bob));
+  }
   // 小旗子
   ctx.fillStyle = '#e2465c';
   ctx.fillRect(x - 40, top - 16, 2, 16);
@@ -882,7 +938,8 @@ function drawPet() {
   // 影子
   ctx.fillStyle = 'rgba(0,0,0,0.18)';
   ctx.fillRect(x + 2, GROUND - 1, 15, 2);
-  drawSprite(S.panda, pet.dir, x, Math.round(pet.y - 29 + bob));
+  if (PET.ready) drawPetSprite(petFrame(), pet.dir, x + 9, Math.round(pet.y + bob));
+  else drawSprite(S.panda, pet.dir, x, Math.round(pet.y - 29 + bob));
 }
 
 function updateItems() {
@@ -1578,10 +1635,21 @@ const cut = new Cutscene({
     c.fillStyle = '#2b2450';
     c.fill();
     c.clip();
-    const spr = S.panda[1];
-    const k = (size * 0.86) / spr.height;
-    c.drawImage(spr, Math.round(x + (size - spr.width * k) / 2), Math.round(y + size * 0.16),
-      Math.round(spr.width * k), Math.round(spr.height * k));
+    if (PET.ready) {
+      // 有動作圖就用「說話」那一格
+      const i = PET.index.talk != null ? PET.index.talk : 0;
+      const k = (size * 1.35) / PET.fh;
+      c.imageSmoothingEnabled = true;
+      c.drawImage(PET.img, i * PET.fw, 0, PET.fw, PET.fh,
+        Math.round(x + (size - PET.fw * k) / 2), Math.round(y + size * 0.08),
+        Math.round(PET.fw * k), Math.round(PET.fh * k));
+      c.imageSmoothingEnabled = false;
+    } else {
+      const spr = S.panda[1];
+      const k = (size * 0.86) / spr.height;
+      c.drawImage(spr, Math.round(x + (size - spr.width * k) / 2), Math.round(y + size * 0.16),
+        Math.round(spr.width * k), Math.round(spr.height * k));
+    }
     c.restore();
     c.strokeStyle = '#6b58bd';
     c.beginPath();
