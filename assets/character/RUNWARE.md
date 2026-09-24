@@ -95,6 +95,7 @@ python3 tools/runware.py edit src.jpg out.jpg \
 | `query` 搜不到東西 | 參數名是 **`search`** 不是 `query`；用 `query` 會一直回同一批精選模型 |
 | 部分模型不吃 seed | 回 `unsupportedArchitectureSeed`，拿掉 `seed` 即可 |
 | 費用回報是 0 | 要加 `includeCost: true` |
+| 一次送多張 → HTTP 504 | **實測 6 張就會逾時**，而且整批的結果都收不回來——圖已經產了、錢也扣了，只是 URL 拿不到。用 `call_many(chunk=2)` 分批送，逐批重試 |
 
 ---
 

@@ -19,7 +19,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from runware import call
+from runware import call_many
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL = "alibaba:qwen-image@3.0"
@@ -158,22 +158,11 @@ def build(who, only=None, seed=6001, w=768, h=1024):
         names.append(name)
 
     print("=== %s：產 %d 格 ===" % (who, len(tasks)))
-    d = call(tasks, timeout=1200)
-    if "_httpError" in d:
-        raise SystemExit("!! HTTP %s\n%s" % (d["_httpError"], d["_body"][:800]))
-    if "errors" in d:
-        import json
-        raise SystemExit("!! " + json.dumps(d["errors"], ensure_ascii=False, indent=2)[:800])
-
     import urllib.request
-    by_uuid = {r["taskUUID"]: r for r in d.get("data", [])}
-    cost = 0.0
-    for t, name in zip(tasks, names):
-        r = by_uuid.get(t["taskUUID"])
-        if not r:
-            print("  %-11s ❌ 沒回應" % name)
-            continue
-        cost += r.get("cost") or 0
+    name_of = {t["taskUUID"]: n for t, n in zip(tasks, names)}
+
+    def save(task, r):
+        name = name_of[task["taskUUID"]]
         out = os.path.join(dst, name + ".jpg")
         if r.get("imageURL"):
             urllib.request.urlretrieve(r["imageURL"], out)
@@ -181,10 +170,17 @@ def build(who, only=None, seed=6001, w=768, h=1024):
             open(out, "wb").write(base64.b64decode(r["imageBase64Data"].split(",")[-1]))
         else:
             print("  %-11s ❌ 沒有影像" % name)
-            continue
+            return
         print("  %-11s → %s (%.0f KB)" % (name, os.path.relpath(out, ROOT),
                                           os.path.getsize(out) / 1024))
-    print("\n花費 US$%.4f（每格約 US$%.4f）" % (cost, cost / max(1, len(names))))
+
+    ok, failed, cost = call_many(tasks, chunk=2, timeout=600, on_result=save)
+    print("\n成功 %d / %d 格，花費 US$%.4f（每格約 US$%.4f）"
+          % (ok, len(tasks), cost, cost / max(1, ok)))
+    if failed:
+        print("失敗的格：%s" % ", ".join(name_of[t["taskUUID"]] for t in failed))
+        print("→ 重跑：python3 tools/gen_sprites.py %s %s"
+              % (who, " ".join(name_of[t["taskUUID"]] for t in failed)))
 
 
 if __name__ == "__main__":

@@ -26,6 +26,7 @@ import json
 import os
 import sys
 import urllib.error
+import time
 import urllib.request
 import uuid
 
@@ -34,6 +35,8 @@ DEFAULT_MODEL = "alibaba:qwen-image@3.0"
 
 
 def call(tasks, timeout=600):
+    """送一批 task。注意：一次送太多會 504（實測 6 張就會），
+    要一次產很多張請用 call_many()。"""
     key = os.environ.get("RUNWARE_API_KEY")
     if not key:
         raise SystemExit("!! 沒有 RUNWARE_API_KEY（在環境設定裡加，不要貼在對話或程式碼裡）")
@@ -46,7 +49,48 @@ def call(tasks, timeout=600):
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return json.loads(r.read())
     except urllib.error.HTTPError as e:
-        return {"_httpError": e.code, "_body": e.read().decode()[:2000]}
+        return {"_httpError": e.code, "_body": e.read().decode()[:4000]}
+    except Exception as e:                       # 連線中斷、逾時之類
+        return {"_httpError": 0, "_body": repr(e)}
+
+
+def call_many(tasks, chunk=2, timeout=600, retries=2, on_result=None):
+    """分批送，逐批重試，任何一批掛掉不影響其他批。
+
+    一次送六張實測會 504（gateway timeout），而且整批的結果都拿不回來——
+    圖已經產了、錢也扣了，只是 URL 收不到。所以寧可分小批多送幾次。
+
+    on_result(task, result) 會在每張成功時立刻呼叫，讓呼叫端可以馬上存檔，
+    不必等整批跑完。回傳 (成功數, 失敗的 task 清單, 總花費)。
+    """
+    ok, failed, cost = 0, [], 0.0
+    for i in range(0, len(tasks), chunk):
+        batch = tasks[i:i + chunk]
+        for attempt in range(retries + 1):
+            d = call(batch, timeout=timeout)
+            if "_httpError" not in d and "errors" not in d:
+                break
+            why = d.get("_httpError") or "errors"
+            if attempt < retries:
+                print("   （第 %d~%d 張失敗：%s，重試 %d/%d）"
+                      % (i + 1, i + len(batch), why, attempt + 1, retries))
+                time.sleep(3 * (attempt + 1))
+        if "_httpError" in d or "errors" in d:
+            body = d.get("_body") or json.dumps(d.get("errors", ""), ensure_ascii=False)
+            print("   ❌ 第 %d~%d 張放棄：%s" % (i + 1, i + len(batch), str(body)[:200]))
+            failed += batch
+            continue
+        by = {r.get("taskUUID"): r for r in d.get("data", [])}
+        for t in batch:
+            r = by.get(t["taskUUID"])
+            if not r:
+                failed.append(t)
+                continue
+            cost += r.get("cost") or 0
+            ok += 1
+            if on_result:
+                on_result(t, r)
+    return ok, failed, cost
 
 
 def _fetch(url, dst):
