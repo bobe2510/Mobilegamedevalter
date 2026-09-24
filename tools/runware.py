@@ -49,8 +49,13 @@ def call(tasks, timeout=600):
         return {"_httpError": e.code, "_body": e.read().decode()[:2000]}
 
 
+def _fetch(url, dst):
+    """從 im.runware.ai 下載（代理已放行）。"""
+    urllib.request.urlretrieve(url, dst)
+
+
 def _save(data, dst):
-    """把回應裡的 base64 寫成檔案，回傳 (張數, 花費)。"""
+    """把回應裡的影像寫成檔案，回傳 (張數, 花費)。"""
     if "_httpError" in data:
         raise SystemExit("!! HTTP %s\n%s" % (data["_httpError"], data["_body"]))
     if "errors" in data:
@@ -59,13 +64,16 @@ def _save(data, dst):
     results = data.get("data", [])
     for i, r in enumerate(results):
         cost += r.get("cost") or 0
-        b64 = r.get("imageBase64Data")
-        if not b64:
-            print("   （第 %d 張沒有回傳影像，欄位：%s）" % (i + 1, ",".join(r.keys())))
-            continue
         out = dst if len(results) == 1 else "%s-%d%s" % (os.path.splitext(dst)[0], i + 1,
                                                          os.path.splitext(dst)[1])
-        open(out, "wb").write(base64.b64decode(b64.split(",")[-1]))
+        b64 = r.get("imageBase64Data")
+        if b64:
+            open(out, "wb").write(base64.b64decode(b64.split(",")[-1]))
+        elif r.get("imageURL"):
+            _fetch(r["imageURL"], out)
+        else:
+            print("   （第 %d 張沒有回傳影像，欄位：%s）" % (i + 1, ",".join(r.keys())))
+            continue
         print("   → %s (%.0f KB)" % (out, os.path.getsize(out) / 1024))
         n += 1
     print("共 %d 張，花費 US$%.4f" % (n, cost))

@@ -16,6 +16,15 @@ from greenscreen_sheet import key_out, label_blobs, merge_orphans, to_masks, spl
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # repo 根目錄
 
 
+def head_height(rgb, solid, top, H):
+    """頭頂到下巴的高度；一姿勢一張時，用它把各張縮到同一個頭大小。"""
+    r, g, b = [rgb[..., i].astype(int) for i in range(3)]
+    skin = solid & (r > 195) & (g > 150) & (b > 120) & (r > b + 20) & ((r - g) < 75)
+    band = skin[top:top + int(H * 0.5)]
+    ys = np.where(band.any(axis=1))[0]
+    return int(ys.max()) + 1 if len(ys) else 0
+
+
 def head_center_x(rgb, solid, top, H):
     """頭部中心 x。用膚色找臉——舉劍過頭的姿勢如果只看最上面幾列，
     量到的會是劍而不是頭，整格就會歪掉。"""
@@ -60,6 +69,7 @@ def figures(path, names, air, ref):
         bb = img.getbbox()
         out.append(dict(name=nm, img=img.crop(bb), bx=bb[0], by=bb[1],
                         head_cx=head_center_x(rgb, solid, top, bot - top + 1), top=top,
+                        head_h=head_height(rgb, solid, top, bot - top + 1),
                         body_h=bot - top + 1,
                         anchor_y=(top + std_h) if nm in air else ground,
                         px=int(m.sum())))
@@ -78,6 +88,18 @@ def build(sources, dst, ref_frame, target_h=None):
             f["_base"] = base
         all_figs += figs
         print("%s → %d 格，站姿參考 %s 身高 %d px" % (os.path.basename(path), len(figs), ref, base))
+
+    # 一姿勢一張的模式下，每張的 ref 就是它自己，_base 會等於自己的身高，
+    # 那樣等於完全不對齊。改成一律以「基準格的頭高」為準：
+    # 最終縮放是 target / _base，想讓每格的頭都縮到同一個大小，
+    # 就要讓 head_h / _base 對每一格都相等，所以 _base = 基準格身高 × head_h / 基準格頭高。
+    if all(len(src[1]) == 1 for src in sources):
+        base = next((f for f in all_figs if f["name"] == ref_frame), None)
+        if not base or not base["head_h"]:
+            raise SystemExit("!! 基準格 %s 量不到頭高" % ref_frame)
+        for f in all_figs:
+            f["_base"] = (base["body_h"] * f["head_h"] / base["head_h"]
+                          if f["head_h"] else base["body_h"])
 
     ref_h = [f for f in all_figs if f["name"] == ref_frame][0]["body_h"]
     target = target_h or ref_h
@@ -101,7 +123,8 @@ def build(sources, dst, ref_frame, target_h=None):
         ay = (f["anchor_y"] - f["by"]) * s
         prepared.append(dict(name=f["name"], img=im2, ax=ax, ay=ay,
                              h=round(f["body_h"] * s), scale=s))
-        print("  %-11s 縮放 %.3f → 身高 %d px" % (f["name"], s, round(f["body_h"] * s)))
+        print("  %-11s 縮放 %.3f → 身高 %3d px  頭高 %3d px"
+              % (f["name"], s, round(f["body_h"] * s), round(f.get("head_h", 0) * s)))
 
     PADX = int(max(max(p["ax"] for p in prepared),
                    max(p["img"].width - p["ax"] for p in prepared))) + 4
@@ -126,6 +149,13 @@ CHARACTERS = {
     # 小公主 v2：新的四張動作圖（跑步 / 空中 / 連擊 / 大招）+ 上一批的
     # hurt / sit_cry / victory。合併完要跑 tools/recolor_cape.py 把舊那三格的
     # 紅披風改成白的（新圖本來就是白披風，不會被動到）。
+    # 一姿勢一張（tools/gen_sprites.py 的輸出）
+    "knight_frames": dict(dst="assets/character/knight/anim", ref="idle",
+                          target_h=251, frames=("knight",)),
+    "mage_frames": dict(dst="assets/character/mage/anim", ref="idle",
+                        target_h=230, frames=("mage",)),
+    "elder_frames": dict(dst="assets/character/elder/anim", ref="idle",
+                         target_h=245, frames=("elder",)),
     "knight_v2": dict(
         dst="assets/character/knight/anim",
         ref="idle",
@@ -209,6 +239,34 @@ NEXT_SHEETS = {
 }
 
 
+# 這些姿勢雙腳離地，對齊時要用「虛擬地面」而不是實際腳線
+AIRBORNE = {"run2", "run4", "jump", "apex", "fall", "hurt"}
+
+
+def frame_sources(who, ref="idle"):
+    """一姿勢一張圖的模式：讀 assets/character/<who>/frames/，檔名就是格名。
+
+    這是 tools/gen_sprites.py 的輸出格式。比「一張排五格」好的地方是
+    每張只有一個人，去背不可能黏在一起，而且缺哪格補哪格就好。
+    """
+    import glob
+    d = os.path.join(ROOT, "assets", "character", who, "frames")
+    hits = sorted(g for g in glob.glob(os.path.join(d, "*"))
+                  if os.path.splitext(g)[1].lower() in (".png", ".jpg", ".jpeg", ".webp"))
+    if not hits:
+        raise SystemExit("!! %s 裡沒有圖（先跑 tools/gen_sprites.py %s）" % (d, who))
+    names = [os.path.splitext(os.path.basename(g))[0] for g in hits]
+    if ref not in names:
+        raise SystemExit("!! 少了基準格 %s.jpg——每一格都靠它對齊縮放" % ref)
+    # 把基準格排到最前面，後面每一張都以它為比例基準
+    order = [ref] + [n for n in names if n != ref]
+    by = dict(zip(names, hits))
+    out = []
+    for n in order:
+        out.append((by[n], [n], (n,) if n in AIRBORNE else (), n))
+    return out
+
+
 def raw_sources(who, letters="ABCD", extra=()):
     """從 assets/character/<who>/raw/ 撿出以 A、B、C… 開頭的綠幕圖。
 
@@ -237,7 +295,9 @@ if __name__ == "__main__":
     who = sys.argv[1] if len(sys.argv) > 1 else "knight"
     cfg = CHARACTERS[who]
     print("=== %s ===" % who)
-    if "raw" in cfg:
+    if "frames" in cfg:
+        srcs = frame_sources(*cfg["frames"], ref=cfg["ref"])
+    elif "raw" in cfg:
         srcs = raw_sources(*cfg["raw"],
                            extra=[(U + f, n, a, r) for f, n, a, r in cfg.get("extra_sources", [])])
     else:
